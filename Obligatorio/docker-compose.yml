@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gestion_academica
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
+    networks:
+      - app_network
+
+  backend:
+    build: ./backend
+    container_name: fastapi_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: gestion_academica
+    networks:
+      - app_network
+
+  frontend:
+    build: ./frontend
+    container_name: app_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+volumes:
+  db_data:
+
+networks:
+  app_network:
