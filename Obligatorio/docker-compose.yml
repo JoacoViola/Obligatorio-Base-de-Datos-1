@@ -11,7 +11,9 @@ services:
     ports:
       - "3306:3306"
     volumes:
+      # Scripts SQL que se ejecutan automáticamente al iniciar MySQL
       - ./database:/docker-entrypoint-initdb.d
+      # Volumen para persistencia de datos
       - db_data:/var/lib/mysql
     networks:
       - app_network
@@ -29,6 +31,7 @@ services:
       DB_USER: root
       DB_PASSWORD: root
       DB_NAME: gestion_academica
+      DB_PORT: 3306
     networks:
       - app_network
 
