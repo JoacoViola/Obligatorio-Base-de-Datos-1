@@ -1,0 +1,161 @@
+.reportes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.stat-box {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8e8e8;
+  text-align: center;
+}
+
+.stat-title {
+  margin: 0;
+  font-size: 12px;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-big {
+  margin: 10px 0 5px 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #2a5298;
+}
+
+.stat-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #999;
+}
+
+.reportes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.report-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8e8e8;
+}
+
+.report-card h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.report-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.report-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+}
+
+.pct {
+  color: #2a5298;
+  font-weight: 600;
+}
+
+.item-bar {
+  height: 24px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2a5298, #00c896);
+  transition: width 0.3s ease;
+}
+
+.item-valor {
+  font-size: 12px;
+  color: #999;
+  font-weight: 600;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8e8e8;
+}
+
+.card h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.simple-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.simple-table thead {
+  background: #f5f5f5;
+}
+
+.simple-table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #555;
+  font-size: 13px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.simple-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e8e8e8;
+  font-size: 13px;
+  color: #333;
+}
+
+.simple-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+@media (max-width: 768px) {
+  .stats-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .reportes-grid {
+    grid-template-columns: 1fr;
+  }
+}
