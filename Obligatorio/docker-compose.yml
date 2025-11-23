@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   db:
-    image: mysql:8.0
+    build:
+      context: ./database
+      dockerfile: Dockerfile
     container_name: mysql_db
     restart: always
     environment:
@@ -11,12 +13,10 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      # Scripts SQL que se ejecutan automáticamente al iniciar MySQL
-      - ./database:/docker-entrypoint-initdb.d
-      # Volumen para persistencia de datos
       - db_data:/var/lib/mysql
     networks:
       - app_network
+
 
   backend:
     build: ./backend
@@ -35,16 +35,16 @@ services:
     networks:
       - app_network
 
-  frontend:
-    build: ./frontend
-    container_name: app_frontend
-    restart: always
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    networks:
-      - app_network
+ #frontend:
+ #   build: ./frontend
+ #   container_name: app_frontend
+ #   restart: always
+ #   ports:
+ #     - "3000:3000"
+ #   depends_on:
+ #     - backend
+ #   networks:
+ #     - app_network
 
 volumes:
   db_data:
