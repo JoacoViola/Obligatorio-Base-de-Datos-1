@@ -5,6 +5,9 @@ from models.reserva_model import (
     ReservaParticipanteAdd,
     AsistenciaUpdate
 )
+
+from utils.validators import ReglaNegocioError
+
 from services.reserva_service import (
     listar_reservas,
     obtener_reserva_por_id,
@@ -43,13 +46,16 @@ def obtener_reserva(id_reserva: int):
 # ======================================
 @reservas_router.post("/")
 def crear_nueva_reserva(r: ReservaCrear):
-    new_id, error = crear_reserva(r.nombre_sala, r.edificio, r.fecha, r.id_turno)
+    try:
+        new_id, error = crear_reserva(r.nombre_sala, r.edificio, r.fecha, r.id_turno)
 
-    if error is None:
-        return {"message": "Reserva creada correctamente", "id_reserva": new_id}
-    else:
-        # Podríamos parsear mejor el error, pero para el obligatorio basta así
-        raise HTTPException(status_code=400, detail=f"No se pudo crear la reserva: {error}")
+        if error is None:
+            return {"message": "Reserva creada correctamente", "id_reserva": new_id}
+        else:
+            raise HTTPException(status_code=400, detail=error)
+
+    except ReglaNegocioError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ======================================
@@ -69,11 +75,14 @@ def cancelar_reserva_endpoint(id_reserva: int):
 # ======================================
 @reservas_router.patch("/{id_reserva}/finalizar")
 def finalizar_reserva_endpoint(id_reserva: int):
-    ok, error = finalizar_reserva(id_reserva)
-    if ok:
-        return {"message": "Reserva finalizada correctamente"}
-    else:
-        raise HTTPException(status_code=400, detail=f"No se pudo finalizar la reserva: {error}")
+    try:
+        ok, error = finalizar_reserva(id_reserva)
+        if ok:
+            return {"message": "Reserva finalizada correctamente"}
+        else:
+            raise HTTPException(status_code=400, detail=error)
+    except ReglaNegocioError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ======================================
@@ -82,12 +91,17 @@ def finalizar_reserva_endpoint(id_reserva: int):
 # ======================================
 @reservas_router.post("/{id_reserva}/participantes")
 def agregar_participante(id_reserva: int, body: ReservaParticipanteAdd):
-    ok, error = agregar_participante_a_reserva(id_reserva, body.ci_participante)
 
-    if ok:
-        return {"message": "Participante agregado correctamente a la reserva"}
-    else:
-        raise HTTPException(status_code=400, detail=f"No se pudo agregar el participante: {error}")
+    try:
+        ok, error = agregar_participante_a_reserva(id_reserva, body.ci_participante)
+
+        if ok:
+            return {"message": "Participante agregado correctamente a la reserva"}
+        else:
+            raise HTTPException(status_code=400, detail=error)
+
+    except ReglaNegocioError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ======================================
