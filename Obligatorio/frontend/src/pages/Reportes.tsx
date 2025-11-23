@@ -1,37 +1,84 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import "./Reportes.css"
+import { apiClient } from "../utils/api"
+
+type ReportItem = { label: string; valor: number; pct?: string }
+type ReportBlock = { titulo: string; datos: ReportItem[] }
+type Stat = { titulo: string; valor: string; subtitulo: string }
 
 export default function Reportes() {
-  const reportes = [
-    {
-      titulo: "Salas Más Reservadas",
-      datos: [
-        { label: "Sala A-101", valor: 45, pct: "23%" },
-        { label: "Sala B-205", valor: 38, pct: "19%" },
-        { label: "Sala C-310", valor: 32, pct: "16%" },
-      ],
-    },
-    {
-      titulo: "Turnos Más Demandados",
-      datos: [
-        { label: "10:00 - 11:00", valor: 72, pct: "18%" },
-        { label: "14:00 - 15:00", valor: 63, pct: "16%" },
-        { label: "15:00 - 16:00", valor: 58, pct: "15%" },
-      ],
-    },
-  ]
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const estadisticas = [
-    { titulo: "Ocupación Promedio", valor: "68.5%", subtitulo: "Salas ocupadas" },
-    { titulo: "Asistencia", valor: "92.3%", subtitulo: "Reservas utilizadas" },
-    { titulo: "Participantes Promedio", valor: "5.2", subtitulo: "Por reserva" },
-    { titulo: "Reservas No Asistidas", valor: "7.7%", subtitulo: "Este mes" },
-  ]
+  const [reportes, setReportes] = useState<ReportBlock[]>([])
+  const [estadisticas, setEstadisticas] = useState<Stat[]>([])
+  const [reservasPorFacultad, setReservasPorFacultad] = useState<any[]>([])
+  const [resumenTipoUsuario, setResumenTipoUsuario] = useState<any[]>([])
+
+  useEffect(() => {
+    async function fetchAll() {
+      setLoading(true)
+      setError(null)
+
+      try {
+        // Ajustá endpoints según lo que expone tu backend
+        const [
+          salasRes,
+          turnosRes,
+          ocupacionRes,
+          asistenciaRes,
+          reservasFacRes,
+          resumenTipoRes
+        ] = await Promise.all([
+          apiClient.get<any>("/reportes/salas-mas-reservadas"),
+          apiClient.get<any>("/reportes/turnos-mas-usados"),
+          apiClient.get<any>("/reportes/ocupacion-por-sala"),
+          apiClient.get<any>("/reportes/asistencia-general"),
+          apiClient.get<any>("/reportes/reservas-por-semana"),
+          apiClient.get<any>("/reportes/cancelaciones-por-mes") // ejemplo, cambiá si prefieres otro endpoint
+        ])
+
+        const salasData = salasRes?.data?.data ?? []
+        const turnosData = turnosRes?.data?.data ?? []
+        const ocupacionData = ocupacionRes?.data?.data ?? []
+        const asistenciaData = asistenciaRes?.data?.data ?? []
+        const reservasFacData = reservasFacRes?.data?.data ?? []
+        const resumenTipoData = resumenTipoRes?.data?.data ?? []
+
+        setReportes([
+          { titulo: "Salas Más Reservadas", datos: salasData as ReportItem[] },
+          { titulo: "Turnos Más Demandados", datos: turnosData as ReportItem[] }
+        ])
+
+        setEstadisticas([
+          { titulo: "Ocupación Promedio", valor: ocupacionData?.promedio ?? "N/A", subtitulo: "Salas ocupadas" },
+          { titulo: "Asistencia", valor: asistenciaData?.porcentaje ?? "N/A", subtitulo: "Reservas utilizadas" },
+          { titulo: "Participantes Promedio", valor: String(asistenciaData?.participantes_promedio ?? "N/A"), subtitulo: "Por reserva" },
+          { titulo: "Reservas No Asistidas", valor: String(resumenTipoData?.no_asistidas_pct ?? "N/A"), subtitulo: "Este mes" }
+        ])
+
+        setReservasPorFacultad(reservasFacData)
+        setResumenTipoUsuario(resumenTipoData?.by_tipo ?? [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error desconocido")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAll()
+  }, [])
+
+  if (loading) return <div className="reportes-page"><p>Cargando reportes...</p></div>
+  if (error) return <div className="reportes-page"><p className="error-message">Error: {error}</p></div>
 
   return (
     <div className="reportes-page">
       <div className="page-header">
         <h2>Reportes Analíticos</h2>
-        <p>Métricas y análisis del sistema de gestión de salas</p>
+        <p>Métricas y análisis del sistema de gestión de salas (datos desde backend)</p>
       </div>
 
       <div className="stats-section">
@@ -49,14 +96,15 @@ export default function Reportes() {
           <div key={idx} className="report-card">
             <h3>{reporte.titulo}</h3>
             <div className="report-content">
+              {reporte.datos.length === 0 && <div>No hay datos</div>}
               {reporte.datos.map((item, i) => (
                 <div key={i} className="report-item">
                   <div className="item-label">
                     <span>{item.label}</span>
-                    <span className="pct">{item.pct}</span>
+                    <span className="pct">{item.pct ?? ""}</span>
                   </div>
                   <div className="item-bar">
-                    <div className="bar-fill" style={{ width: `${(item.valor / 72) * 100}%` }}></div>
+                    <div className="bar-fill" style={{ width: `${Math.min(100, (item.valor / 100) * 100)}%` }} />
                   </div>
                   <span className="item-valor">{item.valor}</span>
                 </div>
@@ -67,46 +115,26 @@ export default function Reportes() {
       </div>
 
       <div className="card">
-        <h3>Reservas por Facultad</h3>
+        <h3>Reservas por Semana / Facultad</h3>
         <table className="simple-table">
           <thead>
             <tr>
-              <th>Facultad</th>
+              <th>Periodo</th>
               <th>Reservas</th>
               <th>Participantes</th>
               <th>Asistencia</th>
-              <th>Sanciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Ingeniería</td>
-              <td>67</td>
-              <td>312</td>
-              <td>94.0%</td>
-              <td>1</td>
-            </tr>
-            <tr>
-              <td>Negocios</td>
-              <td>54</td>
-              <td>278</td>
-              <td>91.5%</td>
-              <td>2</td>
-            </tr>
-            <tr>
-              <td>Humanidades</td>
-              <td>42</td>
-              <td>189</td>
-              <td>93.2%</td>
-              <td>1</td>
-            </tr>
-            <tr>
-              <td>Derecho</td>
-              <td>38</td>
-              <td>156</td>
-              <td>89.5%</td>
-              <td>3</td>
-            </tr>
+            {reservasPorFacultad.length === 0 && <tr><td colSpan={4}>Sin datos</td></tr>}
+            {reservasPorFacultad.map((r, i) => (
+              <tr key={i}>
+                <td>{r.periodo ?? r.facultad ?? `fila ${i + 1}`}</td>
+                <td>{r.reservas ?? r.valor ?? "-"}</td>
+                <td>{r.participantes ?? "-"}</td>
+                <td>{r.asistencia ?? "-"}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -124,27 +152,16 @@ export default function Reportes() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Estudiante Grado</td>
-              <td>142</td>
-              <td>132</td>
-              <td>10</td>
-              <td>2</td>
-            </tr>
-            <tr>
-              <td>Estudiante Posgrado</td>
-              <td>67</td>
-              <td>64</td>
-              <td>3</td>
-              <td>1</td>
-            </tr>
-            <tr>
-              <td>Docentes</td>
-              <td>52</td>
-              <td>51</td>
-              <td>1</td>
-              <td>0</td>
-            </tr>
+            {resumenTipoUsuario.length === 0 && <tr><td colSpan={5}>Sin datos</td></tr>}
+            {resumenTipoUsuario.map((t: any, i: number) => (
+              <tr key={i}>
+                <td>{t.tipo}</td>
+                <td>{t.reservas}</td>
+                <td>{t.asistencias}</td>
+                <td>{t.no_asistencias}</td>
+                <td>{t.sanciones}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
