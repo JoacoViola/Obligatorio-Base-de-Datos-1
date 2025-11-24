@@ -96,3 +96,29 @@ def actualizar_login(correo: str, contrasenia: str):
         cursor.close()
         conn.close()
         return False, str(e)
+
+
+from utils.helpers import verify_password
+
+def autenticar_login(correo: str, contrasenia: str):
+    """
+    Autentica un usuario verificando correo + contraseña.
+    """
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT correo, contrasenia FROM login WHERE correo = %s",
+        (correo,)
+    )
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not row:
+        return False, "Usuario no encontrado"
+
+    if verify_password(contrasenia, row["contrasenia"]):
+        return True, None
+    else:
+        return False, "Contraseña incorrecta"
