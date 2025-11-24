@@ -78,3 +78,30 @@ def eliminar_login_service(correo: str):
         cursor.close()
         conn.close()
         return False, str(e)
+
+from db import get_connection
+from utils.helpers import hash_password, verify_password
+
+
+def actualizar_contrasenia(correo: str, nueva_contrasenia: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    hashed = hash_password(nueva_contrasenia)
+
+    try:
+        cursor.execute(
+            "UPDATE login SET contrasenia = %s WHERE correo = %s",
+            (hashed, correo),
+        )
+        conn.commit()
+        filas = cursor.rowcount
+        cursor.close()
+        conn.close()
+
+        return filas > 0
+    except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        return False

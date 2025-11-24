@@ -8,3 +8,8 @@ class LoginCrear(BaseModel):
 
 class LoginRespuesta(BaseModel):
     correo: EmailStr
+
+from pydantic import BaseModel, constr
+
+class LoginUpdate(BaseModel):
+    nueva_contrasenia: constr(min_length=6)

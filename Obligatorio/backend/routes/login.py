@@ -39,3 +39,20 @@ def eliminar_login(correo: str):
         return {"message": "Login eliminado correctamente"}
     else:
         raise HTTPException(status_code=400, detail=error)
+
+
+from fastapi import APIRouter, HTTPException
+from models.login_model import LoginUpdate
+from services.login_service import crear_login, autenticar_login, actualizar_contrasenia
+
+login_router = APIRouter(prefix="/login", tags=["Login"])
+
+
+@login_router.patch("/{correo}")
+def patch_contrasenia(correo: str, body: LoginUpdate):
+    ok = actualizar_contrasenia(correo, body.nueva_contrasenia)
+
+    if ok:
+        return {"message": "Contraseña actualizada correctamente"}
+
+    raise HTTPException(status_code=400, detail="No se pudo actualizar la contraseña")

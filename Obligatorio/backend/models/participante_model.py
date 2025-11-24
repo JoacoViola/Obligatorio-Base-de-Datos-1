@@ -15,3 +15,11 @@ class ParticipanteRespuesta(BaseModel):
     nombre: str
     apellido: str
     email: EmailStr
+
+
+from pydantic import BaseModel, EmailStr, constr
+
+class ParticipanteUpdate(BaseModel):
+    nombre: constr(max_length=50) | None = None
+    apellido: constr(max_length=50) | None = None
+    email: EmailStr | None = None
