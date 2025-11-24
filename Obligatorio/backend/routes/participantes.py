@@ -1,9 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from models.participante_model import Participante, ParticipanteCrear, ParticipanteActualizar
-from services.participantes_service import (
+from services.participante_service import (
     crear_participante,
-    obtener_participantes,
-    obtener_participante_por_ci,
+    obtener_participante,
     actualizar_participante,
     eliminar_participante
 )
@@ -23,12 +22,12 @@ def crear(body: ParticipanteCrear):
 
 @participantes_router.get("/", response_model=list[Participante])
 def listar_todos():
-    return obtener_participantes()
+    return obtener_participante()
 
 
 @participantes_router.get("/{ci}", response_model=Participante)
 def obtener(ci: int):
-    row = obtener_participante_por_ci(ci)
+    row = obtener_participante(ci)
     if not row:
         raise HTTPException(status_code=404, detail="Participante no encontrado")
     return row
