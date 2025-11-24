@@ -14,7 +14,7 @@ def hash_password(password: str) -> str:
     return hashed.decode("utf-8")
 
 
-def verificar_password(password: str, hashed: str) -> bool:
+def verify_password(password: str, hashed: str) -> bool:
     """
     Compara una contraseña en texto plano con su hash almacenado.
     """
