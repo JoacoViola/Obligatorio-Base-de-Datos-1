@@ -47,3 +47,34 @@ def autenticar_login(correo: str, contrasenia: str):
         return False, "Contraseña incorrecta"
 
     return True, None
+
+
+def eliminar_login_service(correo: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Verificar que exista
+    cursor.execute(
+        "SELECT 1 FROM login WHERE correo = %s",
+        (correo,)
+    )
+    if not cursor.fetchone():
+        cursor.close()
+        conn.close()
+        return False, "El login no existe."
+
+    try:
+        cursor.execute(
+            "DELETE FROM login WHERE correo = %s",
+            (correo,)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True, None
+
+    except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        return False, str(e)

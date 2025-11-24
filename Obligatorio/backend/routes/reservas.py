@@ -125,3 +125,17 @@ def actualizar_asistencia_reserva(id_reserva: int, body: AsistenciaUpdate):
         return {"message": "Asistencia actualizada correctamente"}
     else:
         raise HTTPException(status_code=400, detail="No se pudo actualizar la asistencia")
+
+
+# ======================================
+# DELETE /reservas/{id_reserva}
+# Eliminar reserva
+# ======================================
+@reservas_router.delete("/{id_reserva}")
+def eliminar_reserva(id_reserva: int):
+    ok, error = eliminar_reserva_service(id_reserva)
+
+    if ok:
+        return {"message": "Reserva eliminada correctamente"}
+    else:
+        raise HTTPException(status_code=400, detail=error)

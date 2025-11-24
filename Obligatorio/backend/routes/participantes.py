@@ -23,3 +23,17 @@ def crear_nuevo_participante(body: ParticipanteCrear):
 @participantes_router.get("/")
 def obtener_participantes():
     return listar_participantes()
+
+
+# ======================================
+# DELETE /participantes/{ci}
+# Eliminar participante
+# ======================================
+@participantes_router.delete("/{ci}")
+def eliminar_participante(ci: int):
+    ok, error = eliminar_participante_service(ci)
+
+    if ok:
+        return {"message": "Participante eliminado correctamente"}
+    else:
+        raise HTTPException(status_code=400, detail=error)

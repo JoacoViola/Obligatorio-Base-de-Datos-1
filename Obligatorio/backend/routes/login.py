@@ -25,3 +25,17 @@ def autenticar_usuario(body: LoginCrear):
         return {"message": "Autenticación correcta"}
     else:
         raise HTTPException(status_code=401, detail=error)
+
+
+# ======================================
+# DELETE /login/{correo}
+# Eliminar login
+# ======================================
+@login_router.delete("/{correo}")
+def eliminar_login(correo: str):
+    ok, error = eliminar_login_service(correo)
+
+    if ok:
+        return {"message": "Login eliminado correctamente"}
+    else:
+        raise HTTPException(status_code=400, detail=error)

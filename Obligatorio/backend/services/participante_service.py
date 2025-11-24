@@ -34,3 +34,34 @@ def listar_participantes():
     cursor.close()
     conn.close()
     return data
+
+
+def eliminar_participante_service(ci: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Verificar que existe
+    cursor.execute(
+        "SELECT 1 FROM participante WHERE ci = %s",
+        (ci,)
+    )
+    if not cursor.fetchone():
+        cursor.close()
+        conn.close()
+        return False, "El participante no existe."
+
+    try:
+        cursor.execute(
+            "DELETE FROM participante WHERE ci = %s",
+            (ci,)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True, None
+
+    except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        return False, str(e)
