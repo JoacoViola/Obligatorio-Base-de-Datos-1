@@ -25,3 +25,12 @@ app.include_router(salas_router)
 app.include_router(reservas_router)
 app.include_router(sanciones_router)
 app.include_router(reportes_router)
+
+@app.get("/")
+def home():
+    return {"message": "API funcionando correctamente 🚀"}
+
+
+from routes.login import login_router
+
+app.include_router(login_router)

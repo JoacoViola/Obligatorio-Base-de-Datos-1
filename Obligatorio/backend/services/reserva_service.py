@@ -3,6 +3,13 @@ from datetime import date, timedelta
 from mysql.connector import Error
 
 from db import get_connection
+from utils.validators import (
+    ReglaNegocioError,
+    validar_sala_existe,
+    validar_turno_existe,
+    validar_sala_disponible,
+    validar_puede_agregarse_a_reserva,
+)
 
 
 # ============================
@@ -44,8 +51,21 @@ def obtener_reserva_por_id(id_reserva: int):
 def crear_reserva(nombre_sala: str, edificio: str, fecha, id_turno: int):
     """
     Crea una reserva con estado 'activa'.
+    Aplica validaciones de:
+    - sala existente
+    - turno existente
+    - sala libre en ese turno/fecha
     Devuelve (id_reserva, error) → error es None si todo salió bien.
     """
+
+    # Validaciones de negocio previas al INSERT
+    try:
+        validar_sala_existe(nombre_sala, edificio)
+        validar_turno_existe(id_turno)
+        validar_sala_disponible(nombre_sala, edificio, fecha, id_turno)
+    except ReglaNegocioError as e:
+        return None, str(e)
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -195,10 +215,21 @@ def finalizar_reserva(id_reserva: int):
 def agregar_participante_a_reserva(id_reserva: int, ci_participante: int):
     """
     Inserta un participante en una reserva.
-    La lógica de negocio dura (capacidad, sanciones, solapamientos, etc.)
-    la manejan los TRIGGERS en la base de datos.
+    Aplica reglas de negocio:
+    - participante existe
+    - participante no sancionado
+    - no superar 2 horas diarias
+    - no superar 3 reservas activas en la semana
+    - no tener reservas superpuestas en el mismo horario
     Devuelve (ok, error).
     """
+
+    # Validaciones de negocio previas al INSERT
+    try:
+        validar_puede_agregarse_a_reserva(ci_participante, id_reserva)
+    except ReglaNegocioError as e:
+        return False, str(e)
+
     conn = get_connection()
     cursor = conn.cursor()
 
