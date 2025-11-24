@@ -1,74 +1,134 @@
-# Sistema de Gestión de Salas – Backend (FastAPI + MySQL + Docker)
+🏫 Sistema de Gestión de Salas – Proyecto Full Stack
 
-Este proyecto implementa un sistema backend para la gestión de salas de estudio de la Universidad Católica del Uruguay.
-Permite administrar **salas, reservas, participantes, sanciones y reportes**, todo respaldado por una base de datos MySQL y
-expuesto mediante una API REST construida con **FastAPI**.
+FastAPI + MySQL + Docker + React/Vite
 
-El backend está completamente dockerizado para facilitar su instalación y despliegue.
+Este proyecto implementa un sistema completo para gestionar salas de estudio, reservas, participantes, sanciones y reportes, utilizando un backend en FastAPI, frontend en React y una base de datos MySQL en Docker.
 
-## Requisitos
-- Docker
-- Docker Compose
+✅ Requisitos
+Backend + Base de Datos
 
-## Instalación y ejecución
+Docker
 
-Cloná el repositorio:
+Docker Compose
 
-```sh
+Frontend
+
+Node.js 18+
+
+npm 8+
+
+🚀 Instalación y Ejecución
+
+Clonar el repositorio:
+
 git clone <URL_DEL_REPO>
-cd <carpeta_del_proyecto>
-```
+cd Obligatorio
 
-### 1. Construir las imágenes
-```sh
+▶️ 1. Backend + MySQL (Docker)
+Construir imágenes:
 docker-compose build
-```
 
-### 2. Levantar los servicios
-```sh
+Iniciar servicios:
 docker-compose up
-```
 
-### 3. Levantar en segundo plano (opcional)
-```sh
+Iniciar en segundo plano:
 docker-compose up -d
-```
 
-### 4. Detener los servicios
-```sh
+Detener:
 docker-compose down
-```
 
-## Acceso al backend
-
-Una vez levantado, el backend queda disponible en:
-
-```
+Acceso al backend:
 http://localhost:8000
-```
 
-Documentación interactiva automática de FastAPI:
 
-- Swagger UI → http://localhost:8000/docs
-- Redoc → http://localhost:8000/redoc
+Swagger UI:
 
-## Estructura del proyecto
+http://localhost:8000/docs
 
-- routes/ → Routers de FastAPI (salas, reservas, participantes, sanciones y reportes)
-- models/ → Modelos Pydantic para requests y responses
-- services/ → Lógica de negocio y acceso a la base de datos
-- database/ → Configuración MySQL y scripts auxiliares
-- docker-compose.yml → Definición de los servicios Docker
-- main.py → Configuración principal de FastAPI
+▶️ 2. Frontend (React + Vite + TailwindCSS)
 
-## Descripción del sistema
+Entrar al frontend:
 
-El backend ofrece funcionalidades para:
+cd frontend
 
-- Gestión de salas (alta, baja, modificación, listado)
-- Gestión de reservas (crear, cancelar, finalizar, agregar participantes)
-- Gestión de participantes y sanciones
-- Generación de reportes estadísticos sobre uso de salas, asistencia, cancelaciones, ocupación, etc.
-- Integración completa con MySQL utilizando procedimientos almacenados
 
-El objetivo del proyecto es servir como API para un sistema de gestión académico/administrativo, permitiendo un flujo claro y robusto de administración de espacios compartidos.
+Instalar dependencias:
+
+npm install
+
+
+Ejecutar:
+
+npm run dev
+
+
+Abrir en navegador:
+
+http://localhost:5173
+
+📁 Estructura del Proyecto
+Obligatorio
+├── backend
+│   ├── models          # Modelos Pydantic
+│   ├── routes          # Endpoints FastAPI
+│   ├── services        # Lógica negocio + DB
+│   └── utils           # Validaciones, helpers, hashing
+│
+├── database
+│   └── docker-entry    # Scripts SQL e inicialización
+│
+├── docs                # Evidencias y documentación
+│
+└── frontend
+    ├── app
+    ├── components
+    │   └── ui
+    ├── hooks
+    ├── lib
+    ├── src
+    │   ├── components
+    │   ├── hooks
+    │   ├── pages       # Pantallas del sistema
+    │   └── utils
+    └── styles          # Estilos globales
+
+🧠 Descripción Breve del Sistema
+
+El sistema permite:
+
+✔ Gestión de salas
+
+Altas, bajas, edición, asignación de turnos y capacidad.
+
+✔ Gestión de reservas
+
+Crear, finalizar, cancelar y administrar participantes.
+Incluye reglas de negocio:
+
+No superposición de horarios
+
+Máximo 2 horas por día por participante
+
+Máximo 3 reservas por semana
+
+La sala no puede estar ocupada
+
+La reserva debe ser de 1 hora
+
+✔ Participantes
+
+CRUD completo vinculado al login.
+
+✔ Sanciones
+
+Sanciones manuales
+
+Sanciones automáticas por inasistencia (2 meses)
+
+✔ Autenticación
+
+Contraseñas hasheadas con bcrypt + login básico.
+
+✔ Reportes
+
+Consultas estadísticas sobre ocupación y uso de salas.
