@@ -17,7 +17,7 @@ interface Sala {
 }
 
 export default function Salas() {
-  const { data: salas, loading, error } = useFetch<Sala[]>("http://localhost:8000/api/salas", [])
+  const { data: salas, loading, error } = useFetch<Sala[]>("http://localhost:8000/salas/", [])
   const [localSalas, setLocalSalas] = useState<Sala[]>([])
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function Salas() {
   const handleDelete = async (id: number) => {
     if (confirm("¿Está seguro de eliminar esta sala?")) {
       try {
-        await apiClient.delete(`/api/salas/${id}`)
+        await apiClient.delete(`/salas/${id}`)
         setLocalSalas(localSalas.filter((s) => s.id !== id))
       } catch (err) {
         alert(`Error al eliminar: ${err instanceof Error ? err.message : "Error desconocido"}`)
@@ -61,7 +61,7 @@ export default function Salas() {
 
     try {
       if (editingId) {
-        const updated = await apiClient.put(`/api/salas/${editingId}`, formData)
+        const updated = await apiClient.put<Sala>(`/api/salas/${editingId}`, formData)
         setLocalSalas(localSalas.map((s) => (s.id === editingId ? updated : s)))
       } else {
         const newSala = await apiClient.post("/api/salas", formData)

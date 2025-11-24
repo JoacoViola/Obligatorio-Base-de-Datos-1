@@ -17,7 +17,7 @@ interface Sancion {
 }
 
 export default function Sanciones() {
-  const { data: sanciones, loading, error } = useFetch<Sancion[]>("http://localhost:8000/api/sanciones", [])
+  const { data: sanciones, loading, error } = useFetch<Sancion[]>("http://localhost:8000/sanciones", [])
   const [localSanciones, setLocalSanciones] = useState<Sancion[]>([])
 
   useEffect(() => {

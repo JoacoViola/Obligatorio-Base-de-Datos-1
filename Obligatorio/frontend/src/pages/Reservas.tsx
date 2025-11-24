@@ -18,7 +18,7 @@ interface Reserva {
 }
 
 export default function Reservas() {
-  const { data: reservas, loading, error } = useFetch<Reserva[]>("http://localhost:8000/api/reservas", [])
+  const { data: reservas, loading, error } = useFetch<Reserva[]>("http://localhost:8000/reservas", [])
   const [localReservas, setLocalReservas] = useState<Reserva[]>([])
 
   useEffect(() => {

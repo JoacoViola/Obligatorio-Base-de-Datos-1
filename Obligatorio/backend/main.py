@@ -4,6 +4,7 @@ from routes.salas import salas_router
 from routes.reservas import reservas_router
 from routes.sanciones import sanciones_router
 from routes.reportes import reportes_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Sistema de Gestión de Salas UCU",
@@ -11,13 +12,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Registrar rutas
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(participantes_router)
 app.include_router(salas_router)
 app.include_router(reservas_router)
 app.include_router(sanciones_router)
 app.include_router(reportes_router)
-
-@app.get("/")
-def home():
-    return {"message": "API funcionando correctamente 🚀"}

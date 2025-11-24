@@ -29,10 +29,10 @@ export default function Dashboard() {
     data: stats,
     loading: statsLoading,
     error: statsError,
-  } = useFetch<DashboardStats>("http://localhost:8000/api/dashboard/stats", [])
+  } = useFetch<DashboardStats>("http://localhost:8000/reservas/", [])
 
   const { data: reservas, loading: reservasLoading } = useFetch<Reserva[]>(
-    "http://localhost:8000/api/reservas?limit=3",
+    "http://localhost:8000/reservas?limit=3",
     [],
   )
 
