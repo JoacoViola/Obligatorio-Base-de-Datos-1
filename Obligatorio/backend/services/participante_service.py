@@ -1,139 +1,104 @@
-# backend/services/participante_service.py
-
-from mysql.connector import Error
 from db import get_connection
-from utils.helpers import hash_password
 
-
-# =============================
-# LISTAR PARTICIPANTES
-# =============================
-
-def listar_participantes():
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM participante")
-    data = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return data
-
-
-# =============================
-# OBTENER UNO POR CI
-# =============================
-
-def obtener_participante(ci: int):
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM participante WHERE ci = %s", (ci,))
-    row = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    return row
-
-
-# =============================
-# CREAR PARTICIPANTE + LOGIN
-# =============================
-
-def crear_participante(ci: int, nombre: str, apellido: str, email: str, contrasenia: str):
+# ============================
+# CREAR
+# ============================
+def crear_participante(ci, nombre, apellido, email):
     conn = get_connection()
     cursor = conn.cursor()
 
     try:
-        hashed = hash_password(contrasenia)
-
-        # 1. Crear login
-        cursor.execute(
-            "INSERT INTO login (correo, contrasenia) VALUES (%s, %s)",
-            (email, hashed)
-        )
-
-        # 2. Crear participante
         cursor.execute(
             """
             INSERT INTO participante (ci, nombre, apellido, email)
             VALUES (%s, %s, %s, %s)
             """,
-            (ci, nombre, apellido, email),
+            (ci, nombre, apellido, email)
         )
-
         conn.commit()
         cursor.close()
         conn.close()
         return True, None
-
-    except Error as e:
+    except Exception as e:
         conn.rollback()
         cursor.close()
         conn.close()
         return False, str(e)
 
-
-# =============================
-# ELIMINAR PARTICIPANTE
-# (Elimina también su login por FK ON DELETE CASCADE)
-# =============================
-
-def eliminar_participante(ci: int):
+# ============================
+# OBTENER
+# ============================
+def obtener_participante(ci):
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
-    try:
-        cursor.execute("DELETE FROM participante WHERE ci = %s", (ci,))
-        conn.commit()
+    cursor.execute(
+        "SELECT * FROM participante WHERE ci = %s",
+        (ci,)
+    )
+    row = cursor.fetchone()
 
-        deleted = cursor.rowcount
-        cursor.close()
-        conn.close()
+    cursor.close()
+    conn.close()
+    return row
 
-        return deleted > 0
-
-    except:
-        conn.rollback()
-        cursor.close()
-        conn.close()
-        return False
-
-
-# =============================
-# ACTUALIZAR PARTICIPANTE
-# =============================
-
-def actualizar_participante(ci: int, nombre=None, apellido=None, email=None):
+# ============================
+# ACTUALIZAR (PATCH)
+# ============================
+def actualizar_participante(ci, nombre=None, apellido=None, email=None):
     conn = get_connection()
     cursor = conn.cursor()
 
     campos = []
     valores = []
 
-    if nombre:
+    if nombre is not None:
         campos.append("nombre = %s")
         valores.append(nombre)
 
-    if apellido:
+    if apellido is not None:
         campos.append("apellido = %s")
         valores.append(apellido)
 
-    if email:
+    if email is not None:
         campos.append("email = %s")
         valores.append(email)
 
     if not campos:
-        return False, "No se enviaron datos para actualizar"
+        return False, "No se envió ningún campo para actualizar."
 
-    query = f"UPDATE participante SET {', '.join(campos)} WHERE ci = %s"
     valores.append(ci)
 
+    query = f"UPDATE participante SET {', '.join(campos)} WHERE ci = %s"
+
     try:
-        cursor.execute(query, tuple(valores))
+        cursor.execute(query, valores)
         conn.commit()
-        ok = cursor.rowcount > 0
+        mod = cursor.rowcount
         cursor.close()
         conn.close()
-        return ok, None
-    except Error as e:
+        return mod > 0, None
+    except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        return False, str(e)
+
+# ============================
+# ELIMINAR
+# ============================
+def eliminar_participante(ci):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("DELETE FROM participante WHERE ci = %s", (ci,))
+        conn.commit()
+        filas = cursor.rowcount
+        cursor.close()
+        conn.close()
+        return filas > 0, None
+    except Exception as e:
         conn.rollback()
         cursor.close()
         conn.close()

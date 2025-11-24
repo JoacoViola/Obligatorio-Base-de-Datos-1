@@ -1,42 +1,18 @@
-# backend/models/participante_model.py
-
 from pydantic import BaseModel, EmailStr, constr
 
-
-# ===========================
-# MODELOS BASE
-# ===========================
-
-class ParticipanteBase(BaseModel):
+class Participante(BaseModel):
+    ci: int
     nombre: constr(max_length=50)
     apellido: constr(max_length=50)
     email: EmailStr
 
-
-# ===========================
-# CREAR
-# ===========================
-
-class ParticipanteCrear(ParticipanteBase):
+class ParticipanteCrear(BaseModel):
     ci: int
+    nombre: constr(max_length=50)
+    apellido: constr(max_length=50)
+    email: EmailStr
 
-
-# ===========================
-# RESPUESTA (GET)
-# ===========================
-
-class Participante(ParticipanteBase):
-    ci: int
-
-    class Config:
-        orm_mode = True
-
-
-# ===========================
-# ACTUALIZAR
-# ===========================
-
-class ParticipanteUpdate(BaseModel):
+class ParticipanteActualizar(BaseModel):
     nombre: constr(max_length=50) | None = None
     apellido: constr(max_length=50) | None = None
     email: EmailStr | None = None
