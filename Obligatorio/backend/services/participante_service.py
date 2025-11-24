@@ -25,22 +25,36 @@ def crear_participante(ci, nombre, apellido, email):
         conn.close()
         return False, str(e)
 
+
 # ============================
-# OBTENER
+# OBTENER TODOS
 # ============================
-def obtener_participante(ci):
+def obtener_todos_participantes():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute(
-        "SELECT * FROM participante WHERE ci = %s",
-        (ci,)
-    )
+    cursor.execute("SELECT * FROM participante")
+    rows = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    return rows
+
+
+# ============================
+# OBTENER POR CI
+# ============================
+def obtener_participante_por_ci(ci):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM participante WHERE ci = %s", (ci,))
     row = cursor.fetchone()
 
     cursor.close()
     conn.close()
     return row
+
 
 # ============================
 # ACTUALIZAR (PATCH)
@@ -84,6 +98,7 @@ def actualizar_participante(ci, nombre=None, apellido=None, email=None):
         conn.close()
         return False, str(e)
 
+
 # ============================
 # ELIMINAR
 # ============================
@@ -103,3 +118,4 @@ def eliminar_participante(ci):
         cursor.close()
         conn.close()
         return False, str(e)
+

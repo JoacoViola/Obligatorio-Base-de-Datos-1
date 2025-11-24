@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from models.participante_model import Participante, ParticipanteCrear, ParticipanteActualizar
-from services.participantes_service import (
+from services.participante_service import (
     crear_participante,
-    obtener_participantes,
+    obtener_todos_participantes,
     obtener_participante_por_ci,
     actualizar_participante,
     eliminar_participante
@@ -23,7 +23,7 @@ def crear(body: ParticipanteCrear):
 
 @participantes_router.get("/", response_model=list[Participante])
 def listar_todos():
-    return obtener_participantes()
+    return obtener_todos_participantes()
 
 
 @participantes_router.get("/{ci}", response_model=Participante)
@@ -57,3 +57,4 @@ def borrar(ci: int):
         return {"message": "Participante eliminado correctamente"}
 
     raise HTTPException(status_code=400, detail=error)
+

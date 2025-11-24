@@ -16,3 +16,4 @@ class ParticipanteActualizar(BaseModel):
     nombre: constr(max_length=50) | None = None
     apellido: constr(max_length=50) | None = None
     email: EmailStr | None = None
+
