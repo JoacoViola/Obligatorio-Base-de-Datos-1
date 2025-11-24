@@ -28,7 +28,7 @@ def listar_todos():
 
 @participantes_router.get("/{ci}", response_model=Participante)
 def obtener(ci: int):
-    row = obtener_participante_por_ci(ci)
+    row = obtener_participante(ci)
     if not row:
         raise HTTPException(status_code=404, detail="Participante no encontrado")
     return row
