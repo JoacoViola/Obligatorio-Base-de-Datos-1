@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from models.participante_model import Participante, ParticipanteCrear, ParticipanteUpdate
+from models.participante_model import Participante, ParticipanteCrear, ParticipanteActualizar
 from services.participantes_service import (
     crear_participante,
     obtener_participantes,
@@ -47,7 +47,7 @@ def obtener(ci: int):
 # PATCH - Actualizar participante
 # ============================
 @participantes_router.patch("/{ci}")
-def actualizar(ci: int, body: ParticipanteUpdate):
+def actualizar(ci: int, body: ParticipanteActualizar):
     ok, error = actualizar_participante(
         ci,
         nombre=body.nombre,
