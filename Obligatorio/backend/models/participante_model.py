@@ -1,23 +1,38 @@
 from pydantic import BaseModel, EmailStr, constr
 
 
-# Modelo para CREAR un participante
-class ParticipanteCrear(BaseModel):
-    ci: int
+# ===========================
+# MODELOS BASE
+# ===========================
+
+class ParticipanteBase(BaseModel):
     nombre: constr(max_length=50)
     apellido: constr(max_length=50)
     email: EmailStr
 
 
-# Modelo para RESPUESTA (GET)
-class ParticipanteRespuesta(BaseModel):
+# ===========================
+# CREACIÓN
+# ===========================
+
+class ParticipanteCrear(ParticipanteBase):
     ci: int
-    nombre: str
-    apellido: str
-    email: EmailStr
 
 
-from pydantic import BaseModel, EmailStr, constr
+# ===========================
+# RESPUESTA
+# ===========================
+
+class Participante(ParticipanteBase):
+    ci: int
+
+    class Config:
+        orm_mode = True
+
+
+# ===========================
+# UPDATE (PARCIAL)
+# ===========================
 
 class ParticipanteUpdate(BaseModel):
     nombre: constr(max_length=50) | None = None
