@@ -1,27 +1,36 @@
 from db import get_connection
+from mysql.connector import Error
+
+
+def crear_participante(ci: int, nombre: str, apellido: str, email: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            INSERT INTO participante (ci, nombre, apellido, email)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (ci, nombre, apellido, email)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True, None
+
+    except Error as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        return False, str(e)
+
 
 def listar_participantes():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM participante")
     data = cursor.fetchall()
+    cursor.close()
     conn.close()
     return data
-
-def crear_participante(ci, nombre, apellido, email):
-    conn = get_connection()
-    cursor = conn.cursor()
-    query = """
-        INSERT INTO participante (ci, nombre, apellido, email)
-        VALUES (%s, %s, %s, %s)
-    """
-    values = (ci, nombre, apellido, email)
-
-    try:
-        cursor.execute(query, values)
-        conn.commit()
-        conn.close()
-        return True
-    except:
-        conn.close()
-        return False
