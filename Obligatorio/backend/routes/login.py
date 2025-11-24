@@ -1,39 +1,66 @@
 from fastapi import APIRouter, HTTPException
-from models.login_model import LoginCrear
-from services.login_service import crear_login, autenticar_login
+from models.login_model import (
+    LoginCrear,
+    LoginActualizar,
+    LoginAutenticar,
+    LoginRespuesta
+)
+from services.login_service import (
+    crear_login,
+    obtener_login,
+    eliminar_login,
+    actualizar_login,
+    autenticar_login
+)
 
 login_router = APIRouter(prefix="/login", tags=["Login"])
 
 
-# Crear usuario login
+# ============================
+# POST /login (crear)
+# ============================
 @login_router.post("/")
-def crear_usuario_login(body: LoginCrear):
+def crear_login_endpoint(body: LoginCrear):
     ok, error = crear_login(body.correo, body.contrasenia)
 
     if ok:
-        return {"message": "Usuario creado en login correctamente"}
+        return {"message": "Login creado correctamente"}
     else:
         raise HTTPException(status_code=400, detail=error)
 
 
-# Autenticar usuario
-@login_router.post("/auth")
-def autenticar_usuario(body: LoginCrear):
-    ok, error = autenticar_login(body.correo, body.contrasenia)
+# ============================
+# GET /login/{correo}
+# ============================
+@login_router.get("/{correo}", response_model=LoginRespuesta)
+def obtener_login_endpoint(correo: str):
+    login = obtener_login(correo)
+
+    if not login:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    return login
+
+
+# ============================
+# PATCH /login/{correo}
+# ============================
+@login_router.patch("/{correo}")
+def actualizar_login_endpoint(correo: str, body: LoginActualizar):
+    ok, error = actualizar_login(correo, body.contrasenia)
 
     if ok:
-        return {"message": "Autenticación correcta"}
+        return {"message": "Contraseña actualizada correctamente"}
     else:
-        raise HTTPException(status_code=401, detail=error)
+        raise HTTPException(status_code=400, detail=error)
 
 
-# ======================================
+# ============================
 # DELETE /login/{correo}
-# Eliminar login
-# ======================================
+# ============================
 @login_router.delete("/{correo}")
-def eliminar_login(correo: str):
-    ok, error = eliminar_login_service(correo)
+def eliminar_login_endpoint(correo: str):
+    ok, error = eliminar_login(correo)
 
     if ok:
         return {"message": "Login eliminado correctamente"}
@@ -41,18 +68,14 @@ def eliminar_login(correo: str):
         raise HTTPException(status_code=400, detail=error)
 
 
-from fastapi import APIRouter, HTTPException
-from models.login_model import LoginUpdate
-from services.login_service import crear_login, autenticar_login, actualizar_contrasenia
-
-login_router = APIRouter(prefix="/login", tags=["Login"])
-
-
-@login_router.patch("/{correo}")
-def patch_contrasenia(correo: str, body: LoginUpdate):
-    ok = actualizar_contrasenia(correo, body.nueva_contrasenia)
+# ============================
+# POST /login/authenticate
+# ============================
+@login_router.post("/authenticate")
+def autenticar_login_endpoint(body: LoginAutenticar):
+    ok, error = autenticar_login(body.correo, body.contrasenia)
 
     if ok:
-        return {"message": "Contraseña actualizada correctamente"}
-
-    raise HTTPException(status_code=400, detail="No se pudo actualizar la contraseña")
+        return {"message": "Autenticación exitosa"}
+    else:
+        raise HTTPException(status_code=401, detail=error)

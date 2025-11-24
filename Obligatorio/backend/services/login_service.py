@@ -1,80 +1,52 @@
-# backend/services/login_service.py
-
 from db import get_connection
-from mysql.connector import Error
-from utils.helpers import hash_password
+from utils.helpers import hash_password, verify_password
 
-
-# ===========================
-# GET LOGIN
-# ===========================
-
-def obtener_login(correo: str):
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        "SELECT correo FROM login WHERE correo = %s",
-        (correo,),
-    )
-    data = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    return data
-
-
-# ===========================
+# ============================
 # CREAR LOGIN
-# ===========================
-
+# ============================
 def crear_login(correo: str, contrasenia: str):
     conn = get_connection()
     cursor = conn.cursor()
 
-    try:
-        hashed = hash_password(contrasenia)
+    hashed = hash_password(contrasenia)
 
+    try:
         cursor.execute(
             "INSERT INTO login (correo, contrasenia) VALUES (%s, %s)",
-            (correo, hashed),
+            (correo, hashed)
         )
-
         conn.commit()
         cursor.close()
         conn.close()
         return True, None
-
-    except Error as e:
+    except Exception as e:
         conn.rollback()
         cursor.close()
         conn.close()
         return False, str(e)
 
 
-# ===========================
-# ELIMINAR LOGIN
-# ===========================
-
-def eliminar_login(correo: str):
+# ============================
+# OBTENER LOGIN
+# ============================
+def obtener_login(correo: str):
     conn = get_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("DELETE FROM login WHERE correo = %s", (correo,))
-        conn.commit()
-        ok = cursor.rowcount > 0
-        cursor.close()
-        conn.close()
-        return ok
-    except:
-        conn.rollback()
-        cursor.close()
-        conn.close()
-        return False
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT correo FROM login WHERE correo = %s",
+        (correo,)
+    )
+    row = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+    return row
 
 
-# ===========================
-# ACTUALIZAR CONTRASEÑA LOGIN
-# ===========================
-
+# ============================
+# ACTUALIZAR CONTRASEÑA
+# ============================
 def actualizar_login(correo: str, contrasenia: str):
     conn = get_connection()
     cursor = conn.cursor()
@@ -84,26 +56,48 @@ def actualizar_login(correo: str, contrasenia: str):
     try:
         cursor.execute(
             "UPDATE login SET contrasenia = %s WHERE correo = %s",
-            (hashed, correo),
+            (hashed, correo)
         )
         conn.commit()
-        ok = cursor.rowcount > 0
+        filas = cursor.rowcount
         cursor.close()
         conn.close()
-        return ok, None
-    except Error as e:
+        return filas > 0, None
+    except Exception as e:
         conn.rollback()
         cursor.close()
         conn.close()
         return False, str(e)
 
 
-from utils.helpers import verify_password
+# ============================
+# ELIMINAR LOGIN
+# ============================
+def eliminar_login(correo: str):
+    conn = get_connection()
+    cursor = conn.cursor()
 
+    try:
+        cursor.execute(
+            "DELETE FROM login WHERE correo = %s",
+            (correo,)
+        )
+        conn.commit()
+        filas = cursor.rowcount
+        cursor.close()
+        conn.close()
+        return filas > 0, None
+    except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        return False, str(e)
+
+
+# ============================
+# AUTENTICAR LOGIN
+# ============================
 def autenticar_login(correo: str, contrasenia: str):
-    """
-    Autentica un usuario verificando correo + contraseña.
-    """
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
@@ -112,6 +106,7 @@ def autenticar_login(correo: str, contrasenia: str):
         (correo,)
     )
     row = cursor.fetchone()
+
     cursor.close()
     conn.close()
 
