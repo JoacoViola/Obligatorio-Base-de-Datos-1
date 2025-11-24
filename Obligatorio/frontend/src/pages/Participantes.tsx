@@ -22,7 +22,7 @@ export default function Participantes() {
     data: participantes,
     loading,
     error,
-  } = useFetch<Participante[]>("http://localhost:8000/api/participantes", [])
+  } = useFetch<Participante[]>("http://localhost:8000/participantes", [])
   const [localParticipantes, setLocalParticipantes] = useState<Participante[]>([])
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function Participantes() {
   const handleDelete = async (id: number) => {
     if (confirm("¿Está seguro de eliminar este participante?")) {
       try {
-        await apiClient.delete(`/api/participantes/${id}`)
+        await apiClient.delete(`/participantes/${id}`)
         setLocalParticipantes(localParticipantes.filter((p) => p.id !== id))
       } catch (err) {
         alert(`Error al eliminar: ${err instanceof Error ? err.message : "Error desconocido"}`)
