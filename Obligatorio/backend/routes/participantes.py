@@ -37,20 +37,3 @@ def eliminar_participante(ci: int):
         return {"message": "Participante eliminado correctamente"}
     else:
         raise HTTPException(status_code=400, detail=error)
-
-
-from models.participante_model import Participante, ParticipanteUpdate
-from services.participante_service import listar_participantes, crear_participante, actualizar_participante
-from fastapi import APIRouter, HTTPException
-
-participantes_router = APIRouter(prefix="/participantes", tags=["Participantes"])
-
-
-@participantes_router.patch("/{ci}")
-def patch_participante(ci: int, body: ParticipanteUpdate):
-    ok = actualizar_participante(ci, body.nombre, body.apellido, body.email)
-
-    if ok:
-        return {"message": "Participante actualizado correctamente"}
-
-    raise HTTPException(status_code=400, detail="No se pudo actualizar el participante")

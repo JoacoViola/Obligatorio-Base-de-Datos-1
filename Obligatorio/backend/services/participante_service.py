@@ -1,19 +1,64 @@
-from db import get_connection
+# backend/services/participante_service.py
+
 from mysql.connector import Error
+from db import get_connection
+from utils.helpers import hash_password
 
 
-def crear_participante(ci: int, nombre: str, apellido: str, email: str):
+# =============================
+# LISTAR PARTICIPANTES
+# =============================
+
+def listar_participantes():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM participante")
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return data
+
+
+# =============================
+# OBTENER UNO POR CI
+# =============================
+
+def obtener_participante(ci: int):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM participante WHERE ci = %s", (ci,))
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return row
+
+
+# =============================
+# CREAR PARTICIPANTE + LOGIN
+# =============================
+
+def crear_participante(ci: int, nombre: str, apellido: str, email: str, contrasenia: str):
     conn = get_connection()
     cursor = conn.cursor()
 
     try:
+        hashed = hash_password(contrasenia)
+
+        # 1. Crear login
+        cursor.execute(
+            "INSERT INTO login (correo, contrasenia) VALUES (%s, %s)",
+            (email, hashed)
+        )
+
+        # 2. Crear participante
         cursor.execute(
             """
             INSERT INTO participante (ci, nombre, apellido, email)
             VALUES (%s, %s, %s, %s)
             """,
-            (ci, nombre, apellido, email)
+            (ci, nombre, apellido, email),
         )
+
         conn.commit()
         cursor.close()
         conn.close()
@@ -26,83 +71,70 @@ def crear_participante(ci: int, nombre: str, apellido: str, email: str):
         return False, str(e)
 
 
-def listar_participantes():
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM participante")
-    data = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return data
+# =============================
+# ELIMINAR PARTICIPANTE
+# (Elimina también su login por FK ON DELETE CASCADE)
+# =============================
 
-
-def eliminar_participante_service(ci: int):
+def eliminar_participante(ci: int):
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Verificar que existe
-    cursor.execute(
-        "SELECT 1 FROM participante WHERE ci = %s",
-        (ci,)
-    )
-    if not cursor.fetchone():
-        cursor.close()
-        conn.close()
-        return False, "El participante no existe."
-
     try:
-        cursor.execute(
-            "DELETE FROM participante WHERE ci = %s",
-            (ci,)
-        )
+        cursor.execute("DELETE FROM participante WHERE ci = %s", (ci,))
         conn.commit()
+
+        deleted = cursor.rowcount
         cursor.close()
         conn.close()
-        return True, None
 
-    except Exception as e:
+        return deleted > 0
+
+    except:
         conn.rollback()
         cursor.close()
         conn.close()
-        return False, str(e)
+        return False
 
 
-def actualizar_participante(ci: int, nombre: str | None, apellido: str | None, email: str | None):
+# =============================
+# ACTUALIZAR PARTICIPANTE
+# =============================
+
+def actualizar_participante(ci: int, nombre=None, apellido=None, email=None):
     conn = get_connection()
     cursor = conn.cursor()
 
     campos = []
     valores = []
 
-    if nombre is not None:
+    if nombre:
         campos.append("nombre = %s")
         valores.append(nombre)
 
-    if apellido is not None:
+    if apellido:
         campos.append("apellido = %s")
         valores.append(apellido)
 
-    if email is not None:
+    if email:
         campos.append("email = %s")
         valores.append(email)
 
-    if len(campos) == 0:
-        return False
-
-    valores.append(ci)
+    if not campos:
+        return False, "No se enviaron datos para actualizar"
 
     query = f"UPDATE participante SET {', '.join(campos)} WHERE ci = %s"
+    valores.append(ci)
 
     try:
         cursor.execute(query, tuple(valores))
         conn.commit()
-        filas = cursor.rowcount
+        ok = cursor.rowcount > 0
         cursor.close()
         conn.close()
-        return filas > 0
-
-    except Exception:
+        return ok, None
+    except Error as e:
         conn.rollback()
         cursor.close()
         conn.close()
-        return False
+        return False, str(e)

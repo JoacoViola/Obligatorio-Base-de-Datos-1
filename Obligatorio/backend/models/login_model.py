@@ -1,15 +1,15 @@
+# backend/models/login_model.py
+
 from pydantic import BaseModel, EmailStr, constr
 
 
-class LoginCrear(BaseModel):
-    correo: EmailStr
-    contrasenia: constr(min_length=6)
-
-
-class LoginRespuesta(BaseModel):
+class LoginBase(BaseModel):
     correo: EmailStr
 
-from pydantic import BaseModel, constr
+
+class LoginCrear(LoginBase):
+    contrasenia: constr(min_length=4)
+
 
 class LoginUpdate(BaseModel):
-    nueva_contrasenia: constr(min_length=6)
+    contrasenia: constr(min_length=4)

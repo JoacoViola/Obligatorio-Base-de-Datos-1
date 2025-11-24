@@ -1,3 +1,5 @@
+# backend/models/participante_model.py
+
 from pydantic import BaseModel, EmailStr, constr
 
 
@@ -12,7 +14,7 @@ class ParticipanteBase(BaseModel):
 
 
 # ===========================
-# CREACIÓN
+# CREAR
 # ===========================
 
 class ParticipanteCrear(ParticipanteBase):
@@ -20,7 +22,7 @@ class ParticipanteCrear(ParticipanteBase):
 
 
 # ===========================
-# RESPUESTA
+# RESPUESTA (GET)
 # ===========================
 
 class Participante(ParticipanteBase):
@@ -31,7 +33,7 @@ class Participante(ParticipanteBase):
 
 
 # ===========================
-# UPDATE (PARCIAL)
+# ACTUALIZAR
 # ===========================
 
 class ParticipanteUpdate(BaseModel):
