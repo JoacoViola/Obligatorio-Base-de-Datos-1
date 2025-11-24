@@ -11,9 +11,6 @@ from services.participantes_service import (
 participantes_router = APIRouter(prefix="/participantes", tags=["Participantes"])
 
 
-# ============================
-# POST - Crear participante
-# ============================
 @participantes_router.post("/", response_model=Participante)
 def crear(body: ParticipanteCrear):
     ok, error = crear_participante(body.ci, body.nombre, body.apellido, body.email)
@@ -24,17 +21,11 @@ def crear(body: ParticipanteCrear):
     return body
 
 
-# ============================
-# GET - Listar todos
-# ============================
 @participantes_router.get("/", response_model=list[Participante])
 def listar_todos():
     return obtener_participantes()
 
 
-# ============================
-# GET - Obtener por CI
-# ============================
 @participantes_router.get("/{ci}", response_model=Participante)
 def obtener(ci: int):
     row = obtener_participante_por_ci(ci)
@@ -43,9 +34,6 @@ def obtener(ci: int):
     return row
 
 
-# ============================
-# PATCH - Actualizar participante
-# ============================
 @participantes_router.patch("/{ci}")
 def actualizar(ci: int, body: ParticipanteActualizar):
     ok, error = actualizar_participante(
@@ -54,17 +42,18 @@ def actualizar(ci: int, body: ParticipanteActualizar):
         apellido=body.apellido,
         email=body.email
     )
+
     if ok:
         return {"message": "Participante actualizado correctamente"}
+
     raise HTTPException(status_code=400, detail=error)
 
 
-# ============================
-# DELETE - Eliminar participante
-# ============================
 @participantes_router.delete("/{ci}")
 def borrar(ci: int):
     ok, error = eliminar_participante(ci)
+
     if ok:
         return {"message": "Participante eliminado correctamente"}
+
     raise HTTPException(status_code=400, detail=error)
