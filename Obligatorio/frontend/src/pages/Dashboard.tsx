@@ -1,6 +1,9 @@
 import "./Dashboard.css"
 import StatCard from "../components/StatCard"
 import { useFetch } from "../hooks/useFetch"
+import { useState, useEffect } from "react"
+import { apiClient } from "../utils/api"
+import FormModal from "../components/FormModal"
 
 interface DashboardStats {
   salasActivas: number
@@ -46,13 +49,96 @@ export default function Dashboard() {
     [],
   )
 
-  // Backend no tiene endpoint específico de horarios-demanda, usar reporte de turnos
-  const { data: horarios, loading: horariosLoading, error: horariosError } = useFetch<any>(
-    `${apiBaseUrl}/reportes/turnos-mas-usados`,
+  // Fetch para las reservas recientes (limitadas) que se mostrarán en la tabla
+  const { data: reservasRecientes, loading: recientesLoading } = useFetch<any[]>(
+    "http://localhost:8000/reservas?limit=3",
     [],
   )
 
-  // Mapear reservas del backend
+  const [localReservas, setLocalReservas] = useState<any[]>([])
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false)
+  const [participantsList, setParticipantsList] = useState<any[]>([])
+  const [participantsReservaName, setParticipantsReservaName] = useState("")
+
+  // turnos 1..15
+  const turnos = [
+    "08:00 - 09:00",
+    "09:00 - 10:00",
+    "10:00 - 11:00",
+    "11:00 - 12:00",
+    "12:00 - 13:00",
+    "13:00 - 14:00",
+    "14:00 - 15:00",
+    "15:00 - 16:00",
+    "16:00 - 17:00",
+    "17:00 - 18:00",
+    "18:00 - 19:00",
+    "19:00 - 20:00",
+    "20:00 - 21:00",
+    "21:00 - 22:00",
+    "22:00 - 23:00",
+  ]
+
+  const openParticipants = async (id_reserva: number, reservaName: string) => {
+    try {
+      const res = await apiClient.get(`/reservas/${id_reserva}/participantes`)
+      setParticipantsList(res)
+      setParticipantsReservaName(reservaName)
+      setShowParticipantsModal(true)
+    } catch (err) {
+      alert(`Error al obtener participantes: ${err instanceof Error ? err.message : "Error desconocido"}`)
+    }
+  }
+
+  useEffect(() => {
+    if (!reservasRecientes) return
+
+    let mounted = true
+
+    ;(async () => {
+      try {
+        const mapped = await Promise.all(
+          reservasRecientes.map(async (r: any) => {
+            const id = r.id_reserva ?? r.id
+            let participantesArr: any[] = []
+            try {
+              participantesArr = await apiClient.get(`/reservas/${id}/participantes`)
+            } catch (e) {
+              participantesArr = []
+            }
+            const count = participantesArr.length
+            return {
+              id,
+              sala: r.nombre_sala || r.sala || "",
+              fecha: r.fecha,
+              hora: turnos[(r.id_turno ?? r.idTurno) - 1] || "",
+              participantes: (
+                <button className="link-btn" onClick={() => openParticipants(id, r.nombre_sala || r.sala || "") }>
+                  {count}
+                </button>
+              ),
+              estado: r.estado,
+            }
+          }),
+        )
+        if (mounted) setLocalReservas(mapped)
+      } catch (e) {
+        if (mounted) setLocalReservas([])
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [reservasRecientes])
+
+  // Backend no tiene endpoint específico de horarios-demanda, usar reporte de turnos
+  const { data: horarios, loading: horariosLoading, error: horariosError } = useFetch<HorarioDemanda[]>(
+    "http://localhost:8000/api/dashboard/horarios-demanda",
+    [],
+  )
+
+  // Mapear reservas del backend (para estadísticas generales)
   const reservas = reservasBackend && Array.isArray(reservasBackend) 
     ? reservasBackend.map((r: ReservaBackend) => ({
         id: r.id_reserva,
@@ -105,41 +191,53 @@ export default function Dashboard() {
       <div className="dashboard-content">
         <div className="card">
           <h3>Últimas Reservas</h3>
-          {reservasLoading ? (
+          {recientesLoading ? (
             <p className="loading-text">Cargando reservas...</p>
-          ) : reservas && Array.isArray(reservas) && reservas.length > 0 ? (
+          ) : localReservas && localReservas.length > 0 ? (
             <table className="simple-table">
               <thead>
                 <tr>
                   <th>Sala</th>
                   <th>Fecha</th>
-                  <th>Turno</th>
-                  <th>Participantes</th>
+                  <th>Hora</th>
+                  <th className="col-center">Participantes</th>
                   <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
-                {reservas && reservas.length > 0 ? (
-                  reservas.slice(0, 3).map((reserva) => (
-                    <tr key={reserva.id}>
-                      <td>{reserva.sala}</td>
-                      <td>{reserva.fecha}</td>
-                      <td>{reserva.horaInicio}</td>
-                      <td>{reserva.participantes || "-"}</td>
-                      <td>
-                        <span className={`badge ${(reserva.estado || "").toLowerCase().replace(" ", "_")}`}>
-                          {(reserva.estado || "").charAt(0).toUpperCase() + (reserva.estado || "").slice(1)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr><td colSpan={5}>No hay reservas disponibles</td></tr>
-                )}
+                {localReservas.map((reserva) => (
+                  <tr key={reserva.id}>
+                    <td>{reserva.sala}</td>
+                    <td>{reserva.fecha}</td>
+                    <td>{reserva.hora || ""}</td>
+                    <td className="col-center">{reserva.participantes}</td>
+                    <td>
+                      <span className={`badge ${String(reserva.estado).toLowerCase()}`}>
+                        {String(reserva.estado).charAt(0).toUpperCase() + String(reserva.estado).slice(1)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           ) : (
             <p>No hay reservas disponibles</p>
+          )}
+          {showParticipantsModal && (
+            <FormModal
+              title={`Participantes - ${participantsReservaName}`}
+              onClose={() => setShowParticipantsModal(false)}
+              onSave={() => setShowParticipantsModal(false)}
+            >
+              <div className="participants-list">
+                {participantsList.length === 0 && <div>No hay participantes inscritos</div>}
+                {participantsList.map((p) => (
+                  <div key={p.ci_participante} className="participant-item">
+                    <strong>{p.nombre} {p.apellido}</strong> — CI: {p.ci_participante}
+                  </div>
+                ))}
+              </div>
+            </FormModal>
           )}
         </div>
 

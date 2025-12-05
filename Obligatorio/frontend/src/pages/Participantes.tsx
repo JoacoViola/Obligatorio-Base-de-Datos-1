@@ -22,7 +22,7 @@ export default function Participantes() {
     data: participantes,
     loading,
     error,
-  } = useFetch<Participante[]>(`${(import.meta as any).env?.VITE_API_URL || "http://localhost:8000"}/participantes`, [])
+  } = useFetch<Participante[]>("http://localhost:8000/participantes", [])
   const [localParticipantes, setLocalParticipantes] = useState<Participante[]>([])
 
   useEffect(() => {
@@ -48,8 +48,14 @@ export default function Participantes() {
   }
 
   const handleDelete = async (id: number) => {
-    // Backend no tiene endpoint DELETE para participantes
-    alert("La eliminación de participantes no está disponible en el backend")
+    if (confirm("¿Está seguro de eliminar este participante?")) {
+      try {
+        await apiClient.delete(`/participantes/${id}`)
+        setLocalParticipantes(localParticipantes.filter((p) => p.id !== id))
+      } catch (err) {
+        alert(`Error al eliminar: ${err instanceof Error ? err.message : "Error desconocido"}`)
+      }
+    }
   }
 
   const handleSave = async () => {
@@ -60,16 +66,11 @@ export default function Participantes() {
 
     try {
       if (editingId) {
-        // Backend no tiene endpoint PUT para participantes
-        alert("La edición de participantes no está disponible en el backend")
-        return
+        const updated = await apiClient.put(`/api/participantes/${editingId}`, formData)
+        setLocalParticipantes(localParticipantes.map((p) => (p.id === editingId ? updated : p)))
       } else {
-        await apiClient.post("/participantes", formData)
-        // Refresh the list
-        const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || "http://localhost:8000"
-        const response = await fetch(`${apiBaseUrl}/participantes`)
-        const backendData = await response.json() as Participante[]
-        setLocalParticipantes(backendData)
+        const newParticipante = await apiClient.post("/api/participantes", formData)
+        setLocalParticipantes([...localParticipantes, newParticipante])
       }
       setShowModal(false)
     } catch (err) {
