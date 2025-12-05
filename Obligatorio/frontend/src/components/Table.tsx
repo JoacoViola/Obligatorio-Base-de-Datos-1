@@ -30,7 +30,7 @@ export default function Table({ columns, data, onEdit, onDelete }: TableProps) {
         </thead>
         <tbody>
           {data.map((item) => (
-            <tr key={item.id}>
+            <tr key={item.id ?? item.ci ?? item.nombre_sala ?? JSON.stringify(item)}>
               {columns.map((col) => (
                 <td key={col.key} className={col.key === "participantes" ? "col-center" : undefined}>
                   {typeof item[col.key] === "boolean" ? (item[col.key] ? "Sí" : "No") : item[col.key]}
@@ -40,7 +40,7 @@ export default function Table({ columns, data, onEdit, onDelete }: TableProps) {
                 <button className="action-btn edit-btn" onClick={() => onEdit(item)}>
                   ✎ Editar
                 </button>
-                <button className="action-btn delete-btn" onClick={() => onDelete(item.id)}>
+                <button className="action-btn delete-btn" onClick={() => onDelete(item)}>
                   🗑 Eliminar
                 </button>
               </td>

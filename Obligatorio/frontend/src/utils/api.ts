@@ -50,6 +50,18 @@ export const apiClient = {
     return response.json()
   },
 
+  async patch<T>(endpoint: string, data: any): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) {
+      throw new Error(`Error en PATCH ${endpoint}: ${response.statusText}`)
+    }
+    return response.json()
+  },
+
   async patch<T>(endpoint: string, data?: any): Promise<T> {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: "PATCH",

@@ -93,9 +93,15 @@ export default function Reservas() {
   }
 
   const handleDelete = async (id: number) => {
+    const reservaId = typeof id === "number" ? id : (id?.id ?? id?.id_reserva)
+    if (!reservaId) {
+      alert("No se pudo determinar el ID de la reserva a eliminar")
+      return
+    }
+
     if (confirm("¿Está seguro de eliminar esta reserva?")) {
       try {
-        await apiClient.delete(`/reservas/${id}`)
+        await apiClient.delete(`/reservas/${reservaId}`)
         setReloadKey((k) => k + 1)
       } catch (err) {
         alert(`Error al eliminar: ${err instanceof Error ? err.message : "Error desconocido"}`)

@@ -13,8 +13,6 @@ interface Participante {
   nombre: string
   apellido: string
   email: string
-  tipo: "grado" | "posgrado" | "docente"
-  programa: string
 }
 
 export default function Participantes() {
@@ -27,13 +25,18 @@ export default function Participantes() {
 
   useEffect(() => {
     if (participantes) {
-      setLocalParticipantes(participantes)
+      // Backend identifies participants by `ci`. Table expects `id` for keys/actions,
+      // so normalize each participante to include `id = ci`.
+      setLocalParticipantes(
+        participantes.map((p: any) => ({ ...p, id: p.ci }))
+      )
     }
   }, [participantes])
 
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [formData, setFormData] = useState<Partial<Participante>>({})
+  type FormShape = Partial<Participante> & { password?: string }
+  const [formData, setFormData] = useState<FormShape>({})
 
   const handleAdd = () => {
     setEditingId(null)
@@ -43,15 +46,23 @@ export default function Participantes() {
 
   const handleEdit = (participante: Participante) => {
     setEditingId(participante.id)
-    setFormData(participante)
+    // don't populate password when editing
+    const { id, ci, nombre, apellido, email } = participante
+    setFormData({ id, ci, nombre, apellido, email })
     setShowModal(true)
   }
 
   const handleDelete = async (id: number) => {
+    const ci = typeof id === "number" ? id : (id?.ci ?? id?.id)
+    if (!ci) {
+      alert("No se pudo determinar el CI del participante a eliminar")
+      return
+    }
+
     if (confirm("¿Está seguro de eliminar este participante?")) {
       try {
-        await apiClient.delete(`/participantes/${id}`)
-        setLocalParticipantes(localParticipantes.filter((p) => p.id !== id))
+        await apiClient.delete(`/participantes/${ci}`)
+        setLocalParticipantes(localParticipantes.filter((p) => p.id !== ci))
       } catch (err) {
         alert(`Error al eliminar: ${err instanceof Error ? err.message : "Error desconocido"}`)
       }
@@ -63,14 +74,37 @@ export default function Participantes() {
       alert("Por favor complete todos los campos")
       return
     }
-
     try {
       if (editingId) {
-        const updated = await apiClient.put(`/api/participantes/${editingId}`, formData)
-        setLocalParticipantes(localParticipantes.map((p) => (p.id === editingId ? updated : p)))
+        // Use PATCH to update by CI
+        await apiClient.patch(`/participantes/${editingId}`, {
+          nombre: formData.nombre,
+          apellido: formData.apellido,
+          email: formData.email,
+        })
+        setLocalParticipantes(localParticipantes.map((p) => (p.id === editingId ? { ...p, nombre: formData.nombre, apellido: formData.apellido, email: formData.email } : p)))
       } else {
-        const newParticipante = await apiClient.post("/api/participantes", formData)
-        setLocalParticipantes([...localParticipantes, newParticipante])
+        // For creation: first create login, then create participante
+        if (!formData.password) {
+          alert("Por favor ingrese una contraseña para el nuevo participante")
+          return
+        }
+
+        // Create login (POST /login/)
+        await apiClient.post(`/login/`, {
+          correo: formData.email,
+          contrasenia: formData.password,
+        })
+
+        // Then create participante
+        const newParticipante = await apiClient.post(`/participantes`, {
+          ci: formData.ci,
+          nombre: formData.nombre,
+          apellido: formData.apellido,
+          email: formData.email,
+        })
+        // API returns body with ci, nombre, apellido, email. Normalize id for table.
+        setLocalParticipantes([...localParticipantes, { ...newParticipante, id: newParticipante.ci }])
       }
       setShowModal(false)
     } catch (err) {
@@ -83,8 +117,6 @@ export default function Participantes() {
     { key: "nombre", label: "Nombre" },
     { key: "apellido", label: "Apellido" },
     { key: "email", label: "Email" },
-    { key: "tipo", label: "Tipo" },
-    { key: "programa", label: "Programa" },
   ]
 
   return (
@@ -106,73 +138,61 @@ export default function Participantes() {
       )}
 
       {showModal && (
-        <FormModal
-          title={editingId ? "Editar Participante" : "Nuevo Participante"}
-          onClose={() => setShowModal(false)}
-          onSave={handleSave}
-        >
+      <FormModal
+        title={editingId ? "Editar Participante" : "Nuevo Participante"}
+        onClose={() => setShowModal(false)}
+        onSave={handleSave}
+      >
+        <div className="form-group">
+          <label>CI</label>
+          <input
+            type="text"
+            value={formData.ci || ""}
+            onChange={(e) => setFormData({ ...formData, ci: e.target.value })}
+            placeholder="Ej: 12345678"
+          />
+        </div>
+        <div className="form-row">
           <div className="form-group">
-            <label>CI</label>
+            <label>Nombre</label>
             <input
               type="text"
-              value={formData.ci || ""}
-              onChange={(e) => setFormData({ ...formData, ci: e.target.value })}
-              placeholder="Ej: 12345678"
+              value={formData.nombre || ""}
+              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+              placeholder="Nombre"
             />
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Nombre</label>
-              <input
-                type="text"
-                value={formData.nombre || ""}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                placeholder="Nombre"
-              />
-            </div>
-            <div className="form-group">
-              <label>Apellido</label>
-              <input
-                type="text"
-                value={formData.apellido || ""}
-                onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                placeholder="Apellido"
-              />
-            </div>
           </div>
           <div className="form-group">
-            <label>Email</label>
+            <label>Apellido</label>
             <input
-              type="email"
-              value={formData.email || ""}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="email@ucu.edu.uy"
+              type="text"
+              value={formData.apellido || ""}
+              onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+              placeholder="Apellido"
             />
           </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Tipo</label>
-              <select
-                value={formData.tipo || ""}
-                onChange={(e) => setFormData({ ...formData, tipo: e.target.value as any })}
-              >
-                <option value="">Seleccionar...</option>
-                <option value="grado">Estudiante Grado</option>
-                <option value="posgrado">Estudiante Posgrado</option>
-                <option value="docente">Docente</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Programa</label>
-              <input
-                type="text"
-                value={formData.programa || ""}
-                onChange={(e) => setFormData({ ...formData, programa: e.target.value })}
-                placeholder="Ej: Ingeniería"
-              />
-            </div>
+        </div>
+        <div className="form-group">
+          <label>Email</label>
+          <input
+            type="email"
+            value={formData.email || ""}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            placeholder="email@ucu.edu.uy"
+          />
+        </div>
+        {!editingId && (
+          <div className="form-group">
+            <label>Contraseña</label>
+            <input
+              type="password"
+              value={formData.password || ""}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="Contraseña"
+            />
           </div>
-        </FormModal>
+        )}
+      </FormModal>
       )}
     </div>
   )

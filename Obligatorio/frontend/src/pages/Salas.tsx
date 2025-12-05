@@ -8,16 +8,16 @@ import { useFetch } from "../hooks/useFetch"
 import { apiClient } from "../utils/api"
 
 interface Sala {
-  id: number
+  id?: number
   nombre_sala: string
   edificio: string
   capacidad: number
   tipo_sala: "libre" | "posgrado" | "docente"
-  ubicacion: string
 }
 
 export default function Salas() {
-  const { data: salas, loading, error } = useFetch<Sala[]>("http://localhost:8000/salas/", [])
+  const [reloadKey, setReloadKey] = useState(0)
+  const { data: salas, loading, error } = useFetch<Sala[]>("http://localhost:8000/salas/", [reloadKey])
   const [localSalas, setLocalSalas] = useState<Sala[]>([])
 
   useEffect(() => {
@@ -27,26 +27,35 @@ export default function Salas() {
   }, [salas])
 
   const [showModal, setShowModal] = useState(false)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingKey, setEditingKey] = useState<{ nombre_sala: string; edificio: string } | null>(null)
   const [formData, setFormData] = useState<Partial<Sala>>({})
 
   const handleAdd = () => {
-    setEditingId(null)
+    setEditingKey(null)
     setFormData({})
     setShowModal(true)
   }
 
   const handleEdit = (sala: Sala) => {
-    setEditingId(sala.id)
+    setEditingKey({ nombre_sala: sala.nombre_sala, edificio: sala.edificio })
     setFormData(sala)
     setShowModal(true)
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (payload: any) => {
+    // payload may be the sala object (from Table) or the id
+    const nombre = typeof payload === "string" ? payload : payload?.nombre_sala ?? payload?.nombre
+    const edificio = payload?.edificio
+
+    if (!nombre || !edificio) {
+      alert("No se pudo determinar la sala a eliminar (falta nombre o edificio)")
+      return
+    }
+
     if (confirm("¿Está seguro de eliminar esta sala?")) {
       try {
-        await apiClient.delete(`/salas/${id}`)
-        setLocalSalas(localSalas.filter((s) => s.id !== id))
+        await apiClient.delete(`/salas/${encodeURIComponent(nombre)}/${encodeURIComponent(edificio)}`)
+        setReloadKey((k) => k + 1)
       } catch (err) {
         alert(`Error al eliminar: ${err instanceof Error ? err.message : "Error desconocido"}`)
       }
@@ -60,12 +69,24 @@ export default function Salas() {
     }
 
     try {
-      if (editingId) {
-        const updated = await apiClient.put<Sala>(`/salas/${editingId}`, formData)
-        setLocalSalas(localSalas.map((s) => (s.id === editingId ? updated : s)))
+      if (editingKey) {
+        const { nombre_sala: origNombre, edificio: origEdificio } = editingKey
+        await apiClient.put(`/salas/${encodeURIComponent(origNombre)}/${encodeURIComponent(origEdificio)}`, {
+          nombre_sala: formData.nombre_sala,
+          edificio: formData.edificio,
+          capacidad: formData.capacidad,
+          tipo_sala: formData.tipo_sala,
+        })
+        setReloadKey((k) => k + 1)
+        setEditingKey(null)
       } else {
-        const newSala = await apiClient.post("/salas", formData)
-        setLocalSalas([...localSalas, newSala])
+        await apiClient.post("/salas", {
+          nombre_sala: formData.nombre_sala,
+          edificio: formData.edificio,
+          capacidad: formData.capacidad,
+          tipo_sala: formData.tipo_sala,
+        })
+        setReloadKey((k) => k + 1)
       }
       setShowModal(false)
     } catch (err) {
@@ -78,7 +99,6 @@ export default function Salas() {
     { key: "edificio", label: "Edificio" },
     { key: "capacidad", label: "Capacidad" },
     { key: "tipo_sala", label: "Tipo" },
-    { key: "ubicacion", label: "Ubicación" },
   ]
 
   return (
@@ -101,7 +121,7 @@ export default function Salas() {
 
       {showModal && (
         <FormModal
-          title={editingId ? "Editar Sala" : "Nueva Sala"}
+          title={editingKey ? "Editar Sala" : "Nueva Sala"}
           onClose={() => setShowModal(false)}
           onSave={handleSave}
         >
@@ -149,15 +169,7 @@ export default function Salas() {
               </select>
             </div>
           </div>
-          <div className="form-group">
-            <label>Ubicación / Piso</label>
-            <input
-              type="text"
-              value={formData.ubicacion || ""}
-              onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
-              placeholder="Ej: Piso 1"
-            />
-          </div>
+          {/* ubicacion removed from model */}
         </FormModal>
       )}
     </div>
