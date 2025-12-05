@@ -8,21 +8,26 @@ import { useFetch } from "../hooks/useFetch"
 import { apiClient } from "../utils/api"
 
 interface Sancion {
-  id: number
-  participante: string
-  razon: string
-  fechaInicio: string
-  fechaFin: string
-  estado: "activa" | "vencida"
+  id?: number
+  ci: number
+  fecha_inicio: string
+  fecha_fin: string
 }
 
 export default function Sanciones() {
-  const { data: sanciones, loading, error } = useFetch<Sancion[]>("http://localhost:8000/sanciones", [])
+  const { data: sanciones, loading, error } = useFetch<Sancion[]>(`${(import.meta as any).env?.VITE_API_URL || "http://localhost:8000"}/sanciones`, [])
   const [localSanciones, setLocalSanciones] = useState<Sancion[]>([])
 
   useEffect(() => {
     if (sanciones) {
-      setLocalSanciones(sanciones)
+      // Map backend format (ci_participante) to frontend interface (ci)
+      const mappedData: Sancion[] = sanciones.map((item: any) => ({
+        id: item.id_sancion,
+        ci: item.ci_participante,
+        fecha_inicio: item.fecha_inicio,
+        fecha_fin: item.fecha_fin,
+      }))
+      setLocalSanciones(mappedData)
     }
   }, [sanciones])
 
@@ -37,35 +42,48 @@ export default function Sanciones() {
   }
 
   const handleEdit = (sancion: Sancion) => {
-    setEditingId(sancion.id)
+    setEditingId(sancion.id || null)
     setFormData(sancion)
     setShowModal(true)
   }
 
-  const handleDelete = async (id: number) => {
-    if (confirm("¿Está seguro de eliminar esta sanción?")) {
-      try {
-        await apiClient.delete(`/api/sanciones/${id}`)
-        setLocalSanciones(localSanciones.filter((s) => s.id !== id))
-      } catch (err) {
-        alert(`Error al eliminar: ${err instanceof Error ? err.message : "Error desconocido"}`)
-      }
-    }
+  const handleDelete = async (_id: number) => {
+    // Backend no tiene endpoint DELETE para sanciones
+    alert("La eliminación de sanciones no está disponible en el backend")
   }
 
   const handleSave = async () => {
-    if (!formData.participante || !formData.razon || !formData.fechaInicio || !formData.fechaFin) {
+    if (!formData.ci || !formData.fecha_inicio || !formData.fecha_fin) {
       alert("Por favor complete todos los campos")
       return
     }
 
     try {
+      // Map frontend interface (ci) to backend format (ci_participante)
+      const payload = {
+        ci_participante: formData.ci,
+        fecha_inicio: formData.fecha_inicio,
+        fecha_fin: formData.fecha_fin,
+      }
+      
       if (editingId) {
-        const updated = await apiClient.put(`/api/sanciones/${editingId}`, formData)
-        setLocalSanciones(localSanciones.map((s) => (s.id === editingId ? updated : s)))
+        // Backend no tiene endpoint PUT para sanciones
+        alert("La edición de sanciones no está disponible en el backend")
+        return
       } else {
-        const newSancion = await apiClient.post("/api/sanciones", formData)
-        setLocalSanciones([...localSanciones, newSancion])
+        await apiClient.post("/sanciones", payload)
+        // Refresh the list
+        const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || "http://localhost:8000"
+        const response = await fetch(`${apiBaseUrl}/sanciones`)
+        const backendData = await response.json() as any[]
+        // Map backend format (ci_participante) to frontend interface (ci)
+        const mappedData: Sancion[] = backendData.map((item: any) => ({
+          id: item.id_sancion,
+          ci: item.ci_participante,
+          fecha_inicio: item.fecha_inicio,
+          fecha_fin: item.fecha_fin,
+        }))
+        setLocalSanciones(mappedData)
       }
       setShowModal(false)
     } catch (err) {
@@ -74,11 +92,9 @@ export default function Sanciones() {
   }
 
   const columns = [
-    { key: "participante", label: "Participante" },
-    { key: "razon", label: "Razón" },
-    { key: "fechaInicio", label: "Fecha Inicio" },
-    { key: "fechaFin", label: "Fecha Fin" },
-    { key: "estado", label: "Estado" },
+    { key: "ci", label: "CI Participante" },
+    { key: "fecha_inicio", label: "Fecha Inicio" },
+    { key: "fecha_fin", label: "Fecha Fin" },
   ]
 
   return (
@@ -106,54 +122,30 @@ export default function Sanciones() {
           onSave={handleSave}
         >
           <div className="form-group">
-            <label>Participante</label>
-            <select
-              value={formData.participante || ""}
-              onChange={(e) => setFormData({ ...formData, participante: e.target.value })}
-            >
-              <option value="">Seleccionar...</option>
-              <option value="Juan López">Juan López</option>
-              <option value="María García">María García</option>
-              <option value="Carlos Rodríguez">Carlos Rodríguez</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Razón de la Sanción</label>
-            <select value={formData.razon || ""} onChange={(e) => setFormData({ ...formData, razon: e.target.value })}>
-              <option value="">Seleccionar...</option>
-              <option value="No asistencia a reserva">No asistencia a reserva</option>
-              <option value="Daño de instalaciones">Daño de instalaciones</option>
-              <option value="Reserva excesiva">Reserva excesiva</option>
-            </select>
+            <label>CI Participante</label>
+            <input
+              type="number"
+              value={formData.ci || ""}
+              onChange={(e) => setFormData({ ...formData, ci: parseInt(e.target.value) || 0 })}
+            />
           </div>
           <div className="form-row">
             <div className="form-group">
               <label>Fecha Inicio</label>
               <input
                 type="date"
-                value={formData.fechaInicio || ""}
-                onChange={(e) => setFormData({ ...formData, fechaInicio: e.target.value })}
+                value={formData.fecha_inicio || ""}
+                onChange={(e) => setFormData({ ...formData, fecha_inicio: e.target.value })}
               />
             </div>
             <div className="form-group">
               <label>Fecha Fin</label>
               <input
                 type="date"
-                value={formData.fechaFin || ""}
-                onChange={(e) => setFormData({ ...formData, fechaFin: e.target.value })}
+                value={formData.fecha_fin || ""}
+                onChange={(e) => setFormData({ ...formData, fecha_fin: e.target.value })}
               />
             </div>
-          </div>
-          <div className="form-group">
-            <label>Estado</label>
-            <select
-              value={formData.estado || ""}
-              onChange={(e) => setFormData({ ...formData, estado: e.target.value as any })}
-            >
-              <option value="">Seleccionar...</option>
-              <option value="activa">Activa</option>
-              <option value="vencida">Vencida</option>
-            </select>
           </div>
         </FormModal>
       )}

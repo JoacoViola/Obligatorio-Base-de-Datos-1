@@ -24,43 +24,70 @@ export default function Reportes() {
 
       try {
         // Ajustá endpoints según lo que expone tu backend
-        const [
-          salasRes,
-          turnosRes,
-          ocupacionRes,
-          asistenciaRes,
-          reservasFacRes,
-          resumenTipoRes
-        ] = await Promise.all([
+        // Usar Promise.allSettled para manejar errores individuales
+        const results = await Promise.allSettled([
           apiClient.get<any>("/reportes/salas-mas-reservadas"),
           apiClient.get<any>("/reportes/turnos-mas-usados"),
           apiClient.get<any>("/reportes/ocupacion-por-sala"),
           apiClient.get<any>("/reportes/asistencia-general"),
           apiClient.get<any>("/reportes/reservas-por-semana"),
-          apiClient.get<any>("/reportes/cancelaciones-por-mes") // ejemplo, cambiá si prefieres otro endpoint
+          apiClient.get<any>("/reportes/cancelaciones-por-mes")
         ])
 
-        const salasData = salasRes?.data?.data ?? []
-        const turnosData = turnosRes?.data?.data ?? []
-        const ocupacionData = ocupacionRes?.data?.data ?? []
-        const asistenciaData = asistenciaRes?.data?.data ?? []
-        const reservasFacData = reservasFacRes?.data?.data ?? []
-        const resumenTipoData = resumenTipoRes?.data?.data ?? []
+        const salasRes = results[0].status === "fulfilled" ? results[0].value : null
+        const turnosRes = results[1].status === "fulfilled" ? results[1].value : null
+        const ocupacionRes = results[2].status === "fulfilled" ? results[2].value : null
+        const asistenciaRes = results[3].status === "fulfilled" ? results[3].value : null
+        const reservasFacRes = results[4].status === "fulfilled" ? results[4].value : null
+        const resumenTipoRes = results[5].status === "fulfilled" ? results[5].value : null
+
+        // Log errores individuales si los hay
+        results.forEach((result, index) => {
+          if (result.status === "rejected") {
+            console.warn(`Error en reporte ${index}:`, result.reason)
+          }
+        })
+
+        // Backend devuelve los datos directamente, no envueltos en data.data
+        const salasData = Array.isArray(salasRes) ? salasRes : []
+        const turnosData = Array.isArray(turnosRes) ? turnosRes : []
+        const ocupacionData = ocupacionRes || {}
+        const asistenciaData = asistenciaRes || {}
+        const reservasFacData = Array.isArray(reservasFacRes) ? reservasFacRes : []
+        const resumenTipoData = resumenTipoRes || {}
+
+        // Mapear datos del backend al formato esperado por el frontend
+        const salasMapped = salasData.map((item: any) => ({
+          label: `${item.nombre_sala || ""} - ${item.edificio || ""}`,
+          valor: item.cantidad_reservas || 0,
+        }))
+
+        // El backend puede fallar si la tabla turno no tiene columna descripcion
+        // Mapear con fallback
+        const turnosMapped = turnosData.map((item: any) => ({
+          label: item.descripcion || `Turno ${item.id_turno || ""}` || "N/A",
+          valor: item.cantidad || 0,
+        }))
 
         setReportes([
-          { titulo: "Salas Más Reservadas", datos: salasData as ReportItem[] },
-          { titulo: "Turnos Más Demandados", datos: turnosData as ReportItem[] }
+          { titulo: "Salas Más Reservadas", datos: salasMapped as ReportItem[] },
+          { titulo: "Turnos Más Demandados", datos: turnosMapped as ReportItem[] }
         ])
 
         setEstadisticas([
-          { titulo: "Ocupación Promedio", valor: ocupacionData?.promedio ?? "N/A", subtitulo: "Salas ocupadas" },
-          { titulo: "Asistencia", valor: asistenciaData?.porcentaje ?? "N/A", subtitulo: "Reservas utilizadas" },
-          { titulo: "Participantes Promedio", valor: String(asistenciaData?.participantes_promedio ?? "N/A"), subtitulo: "Por reserva" },
-          { titulo: "Reservas No Asistidas", valor: String(resumenTipoData?.no_asistidas_pct ?? "N/A"), subtitulo: "Este mes" }
+          { titulo: "Ocupación Promedio", valor: ocupacionData?.promedio_ocupacion || ocupacionData?.promedio || "N/A", subtitulo: "Salas ocupadas" },
+          { titulo: "Asistencia", valor: asistenciaData?.porcentaje_asistencia || asistenciaData?.porcentaje || "N/A", subtitulo: "Reservas utilizadas" },
+          { titulo: "Participantes Promedio", valor: String(asistenciaData?.participantes_promedio || asistenciaData?.promedio_participantes || "N/A"), subtitulo: "Por reserva" },
+          { titulo: "Reservas por Semana", valor: String(reservasFacData.length || 0), subtitulo: "Total semanas" }
         ])
 
-        setReservasPorFacultad(reservasFacData)
-        setResumenTipoUsuario(resumenTipoData?.by_tipo ?? [])
+        setReservasPorFacultad(reservasFacData.map((r: any) => ({
+          periodo: r.semana || `Semana ${r.cantidad || ""}`,
+          reservas: r.cantidad || 0,
+          participantes: "-",
+          asistencia: "-",
+        })))
+        setResumenTipoUsuario([]) // Backend no tiene este reporte específico
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error desconocido")
       } finally {
