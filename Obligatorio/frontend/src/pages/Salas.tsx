@@ -9,10 +9,10 @@ import { apiClient } from "../utils/api"
 
 interface Sala {
   id: number
-  nombre: string
+  nombre_sala: string
   edificio: string
   capacidad: number
-  tipo: "libre" | "posgrado" | "docente"
+  tipo_sala: "libre" | "posgrado" | "docente"
   ubicacion: string
 }
 
@@ -54,17 +54,17 @@ export default function Salas() {
   }
 
   const handleSave = async () => {
-    if (!formData.nombre || !formData.edificio || !formData.capacidad) {
+    if (!formData.nombre_sala || !formData.edificio || !formData.capacidad) {
       alert("Por favor complete todos los campos obligatorios")
       return
     }
 
     try {
       if (editingId) {
-        const updated = await apiClient.put<Sala>(`/api/salas/${editingId}`, formData)
+        const updated = await apiClient.put<Sala>(`/salas/${editingId}`, formData)
         setLocalSalas(localSalas.map((s) => (s.id === editingId ? updated : s)))
       } else {
-        const newSala = await apiClient.post("/api/salas", formData)
+        const newSala = await apiClient.post("/salas", formData)
         setLocalSalas([...localSalas, newSala])
       }
       setShowModal(false)
@@ -74,10 +74,10 @@ export default function Salas() {
   }
 
   const columns = [
-    { key: "nombre", label: "Nombre" },
+    { key: "nombre_sala", label: "Nombre" },
     { key: "edificio", label: "Edificio" },
     { key: "capacidad", label: "Capacidad" },
-    { key: "tipo", label: "Tipo" },
+    { key: "tipo_sala", label: "Tipo" },
     { key: "ubicacion", label: "Ubicación" },
   ]
 
@@ -110,8 +110,8 @@ export default function Salas() {
               <label>Nombre de la Sala</label>
               <input
                 type="text"
-                value={formData.nombre || ""}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                value={formData.nombre_sala || ""}
+                onChange={(e) => setFormData({ ...formData, nombre_sala: e.target.value })}
                 placeholder="Ej: Sala A-101"
               />
             </div>
@@ -139,8 +139,8 @@ export default function Salas() {
             <div className="form-group">
               <label>Tipo de Sala</label>
               <select
-                value={formData.tipo || ""}
-                onChange={(e) => setFormData({ ...formData, tipo: e.target.value as any })}
+                value={formData.tipo_sala || ""}
+                onChange={(e) => setFormData({ ...formData, tipo_sala: e.target.value as any })}
               >
                 <option value="">Seleccionar...</option>
                 <option value="libre">Uso Libre</option>

@@ -21,7 +21,9 @@ export default function Table({ columns, data, onEdit, onDelete }: TableProps) {
         <thead>
           <tr>
             {columns.map((col) => (
-              <th key={col.key}>{col.label}</th>
+              <th key={col.key} className={col.key === "participantes" ? "col-center" : undefined}>
+                {col.label}
+              </th>
             ))}
             <th>Acciones</th>
           </tr>
@@ -30,7 +32,7 @@ export default function Table({ columns, data, onEdit, onDelete }: TableProps) {
           {data.map((item) => (
             <tr key={item.id}>
               {columns.map((col) => (
-                <td key={col.key}>
+                <td key={col.key} className={col.key === "participantes" ? "col-center" : undefined}>
                   {typeof item[col.key] === "boolean" ? (item[col.key] ? "Sí" : "No") : item[col.key]}
                 </td>
               ))}

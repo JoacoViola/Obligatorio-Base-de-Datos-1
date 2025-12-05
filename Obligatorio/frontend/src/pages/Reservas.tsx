@@ -11,19 +11,68 @@ interface Reserva {
   id: number
   sala: string
   fecha: string
-  horaInicio: string
-  horaFin: string
-  participantes: number
+  hora: string
+  participantes: any
   estado: "activa" | "cancelada" | "finalizada" | "sin_asistencia"
 }
 
 export default function Reservas() {
-  const { data: reservas, loading, error } = useFetch<Reserva[]>("http://localhost:8000/reservas", [])
+  const [reloadKey, setReloadKey] = useState(0)
+  const { data: reservas, loading, error } = useFetch<any[]>("http://localhost:8000/reservas", [reloadKey])
   const [localReservas, setLocalReservas] = useState<Reserva[]>([])
 
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false)
+  const [participantsList, setParticipantsList] = useState<any[]>([])
+  const [participantsReservaName, setParticipantsReservaName] = useState<string>("")
+
   useEffect(() => {
-    if (reservas) {
-      setLocalReservas(reservas)
+    if (!reservas) return
+
+    let mounted = true
+
+    const enrich = async () => {
+      try {
+        const mapped = await Promise.all(
+          reservas.map(async (r: any) => {
+            const id = r.id_reserva ?? r.id
+            // fetch participantes for count
+            let participantesArr: any[] = []
+            try {
+              participantesArr = await apiClient.get(`/reservas/${id}/participantes`)
+            } catch (e) {
+              participantesArr = []
+            }
+
+            const count = participantesArr.length
+
+            const participantesElem = (
+              <button className="link-btn" onClick={() => openParticipants(id, r.nombre_sala || r.sala || "") }>
+                {count}
+              </button>
+            )
+
+            return {
+              id,
+              sala: r.nombre_sala || r.sala || "",
+              edificio: r.edificio || "",
+              fecha: r.fecha,
+              hora: turnos[(r.id_turno ?? r.idTurno) - 1] || "",
+              participantes: participantesElem,
+              estado: r.estado,
+            }
+          })
+        )
+
+        if (mounted) setLocalReservas(mapped)
+      } catch (err) {
+        if (mounted) setLocalReservas([])
+      }
+    }
+
+    enrich()
+
+    return () => {
+      mounted = false
     }
   }, [reservas])
 
@@ -46,8 +95,8 @@ export default function Reservas() {
   const handleDelete = async (id: number) => {
     if (confirm("¿Está seguro de eliminar esta reserva?")) {
       try {
-        await apiClient.delete(`/api/reservas/${id}`)
-        setLocalReservas(localReservas.filter((r) => r.id !== id))
+        await apiClient.delete(`/reservas/${id}`)
+        setReloadKey((k) => k + 1)
       } catch (err) {
         alert(`Error al eliminar: ${err instanceof Error ? err.message : "Error desconocido"}`)
       }
@@ -62,12 +111,11 @@ export default function Reservas() {
 
     try {
       if (editingId) {
-        const updated = await apiClient.put(`/api/reservas/${editingId}`, formData)
-        setLocalReservas(localReservas.map((r) => (r.id === editingId ? updated : r)))
+        await apiClient.put(`/reservas/${editingId}`, formData)
       } else {
-        const newReserva = await apiClient.post("/api/reservas", formData)
-        setLocalReservas([...localReservas, newReserva])
+        await apiClient.post(`/reservas`, formData)
       }
+      setReloadKey((k) => k + 1)
       setShowModal(false)
     } catch (err) {
       alert(`Error al guardar: ${err instanceof Error ? err.message : "Error desconocido"}`)
@@ -76,12 +124,42 @@ export default function Reservas() {
 
   const columns = [
     { key: "sala", label: "Sala" },
+    { key: "edificio", label: "Edificio" },
     { key: "fecha", label: "Fecha" },
-    { key: "horaInicio", label: "Hora Inicio" },
-    { key: "horaFin", label: "Hora Fin" },
+    { key: "hora", label: "Hora" },
     { key: "participantes", label: "Participantes" },
     { key: "estado", label: "Estado" },
   ]
+
+  // Turnos fijos (1..15)
+  const turnos = [
+    "08:00 - 09:00",
+    "09:00 - 10:00",
+    "10:00 - 11:00",
+    "11:00 - 12:00",
+    "12:00 - 13:00",
+    "13:00 - 14:00",
+    "14:00 - 15:00",
+    "15:00 - 16:00",
+    "16:00 - 17:00",
+    "17:00 - 18:00",
+    "18:00 - 19:00",
+    "19:00 - 20:00",
+    "20:00 - 21:00",
+    "21:00 - 22:00",
+    "22:00 - 23:00",
+  ]
+
+  const openParticipants = async (id_reserva: number, reservaName: string) => {
+    try {
+      const res = await apiClient.get(`/reservas/${id_reserva}/participantes`)
+      setParticipantsList(res)
+      setParticipantsReservaName(reservaName)
+      setShowParticipantsModal(true)
+    } catch (err) {
+      alert(`Error al obtener participantes: ${err instanceof Error ? err.message : "Error desconocido"}`)
+    }
+  }
 
   return (
     <div className="crud-page">
@@ -99,6 +177,23 @@ export default function Reservas() {
         <div className="card">
           <Table columns={columns} data={localReservas} onEdit={handleEdit} onDelete={handleDelete} />
         </div>
+      )}
+
+      {showParticipantsModal && (
+        <FormModal
+          title={`Participantes - ${participantsReservaName}`}
+          onClose={() => setShowParticipantsModal(false)}
+          onSave={() => setShowParticipantsModal(false)}
+        >
+          <div className="participants-list">
+            {participantsList.length === 0 && <div>No hay participantes inscritos</div>}
+            {participantsList.map((p) => (
+              <div key={p.ci_participante} className="participant-item">
+                <strong>{p.nombre} {p.apellido}</strong> — CI: {p.ci_participante}
+              </div>
+            ))}
+          </div>
+        </FormModal>
       )}
 
       {showModal && (

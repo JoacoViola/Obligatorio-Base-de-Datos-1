@@ -132,6 +132,34 @@
   gap: 15px;
 }
 
+/* Estilo para botón de participantes (uso en Dashboard y Reservas) */
+.link-btn,
+.participants-btn {
+  background: linear-gradient(90deg, #eef6ff, #e6f0ff);
+  color: #1e3c72;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 1px 4px rgba(30, 60, 114, 0.12);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.link-btn:hover,
+.participants-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(30, 60, 114, 0.14);
+  background: linear-gradient(90deg, #e6f0ff, #d7e9ff);
+}
+
+/* Center-only column helper for simple-table (more specific) */
+.simple-table th.col-center,
+.simple-table td.col-center {
+  text-align: center !important;
+}
+
 /* Agregar estilos para loading y error */
 .loading-message {
   padding: 20px;

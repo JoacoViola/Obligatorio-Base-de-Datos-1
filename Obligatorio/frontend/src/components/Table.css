@@ -73,6 +73,34 @@
   font-size: 14px;
 }
 
+/* Botón de participantes / link estilizado */
+.link-btn,
+.participants-btn {
+  background: linear-gradient(90deg, #eef6ff, #e6f0ff);
+  color: #1e3c72;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 1px 4px rgba(30, 60, 114, 0.12);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+/* Center-only column helper for data-table (more specific to override other rules) */
+.data-table th.col-center,
+.data-table td.col-center {
+  text-align: center !important;
+}
+
+.link-btn:hover,
+.participants-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(30, 60, 114, 0.14);
+  background: linear-gradient(90deg, #e6f0ff, #d7e9ff);
+}
+
 @media (max-width: 768px) {
   .data-table th,
   .data-table td {
